@@ -1,0 +1,267 @@
+:root {
+  --bg-color: #080808; /* Pitch Black */
+  --bg-lines: linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+              linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+  --bg-lines-size: 40px 40px;
+  
+  --text-primary: #f2f2f2;
+  --text-secondary: #999999;
+  
+  --panel-bg: #111111;
+  --panel-border: 1px solid #2a2a2a;
+  
+  --primary: #E50914; /* Cinematic Blood Red */
+  --primary-hover: #b80710;
+  --accent: #FFC300; /* Gold */
+  
+  --danger: #E50914;
+  --success: #1E9146;
+  
+  /* Brutalism forces sharp edges */
+  --radius: 0px; 
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Jost', sans-serif;
+  background-color: var(--bg-color);
+  background-image: var(--bg-lines);
+  background-size: var(--bg-lines-size);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, th {
+  font-family: 'Prata', serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* Tái cấu trúc Panel rũ bỏ Glassmorphism */
+.ui-panel {
+  background: var(--panel-bg);
+  border: var(--panel-border);
+  border-radius: var(--radius);
+  /* Hard shadow for brutal depth */
+  box-shadow: 4px 4px 0px rgba(229, 9, 20, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Giữ lại Sidebar Active Marker */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.sidebar-link:hover {
+  color: white;
+}
+
+.sidebar-link.active {
+  color: white;
+  background: linear-gradient(90deg, rgba(229,9,20,0.1) 0%, transparent 100%);
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--primary);
+  /* Slide in active marker */
+  animation: slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideRight {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-left: var(--panel-border);
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Brutalist Buttons */
+button {
+  font-family: 'Jost', sans-serif;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+.btn-primary:active {
+  transform: translate(2px, 2px);
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-danger {
+  background-color: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+/* Forms */
+input, select, textarea {
+  font-family: inherit;
+  background: #000;
+  border: var(--panel-border);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  outline: none;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  background: #0A0A0A;
+}
+label {
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Data Table - Editorial Style */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+  padding: 1.25rem 1rem;
+  text-align: left;
+  border-bottom: var(--panel-border);
+}
+
+.data-table th {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.data-table tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 2px;
+}
+.status-badge.NowPlaying { background: rgba(30, 145, 70, 0.15); color: #2ecc71; border: 1px solid #2ecc71; }
+.status-badge.ComingSoon { background: rgba(229, 9, 20, 0.1); color: var(--primary); border: 1px solid var(--primary); }
+.status-badge.Ended { background: #222; color: #666; border: 1px solid #444; }
+
+/* Action Buttons Hover */
+.action-btn {
+  background: transparent;
+  padding: 0.5rem;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-btn.edit:hover {
+  background: rgba(255, 195, 0, 0.1);
+  border-color: var(--accent);
+  color: var(--accent) !important;
+}
+.action-btn.delete:hover {
+  background: rgba(229, 9, 20, 0.1);
+  border-color: var(--primary);
+  color: var(--primary) !important;
+}
+
+/* Form Styles for Drawer */
+.drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.drawer-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.drawer-form .form-group label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.drawer-form input, .drawer-form select, .drawer-form textarea {
+  width: 100%;
+}
+

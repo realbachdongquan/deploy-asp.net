@@ -1,0 +1,29 @@
+# .NET Core
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node.js (Frontend)
+**/node_modules/
+**/dist/
+**/build/
+.env
+.env.local
+.env.production
+.DS_Store
+
+# Agent (Theo yêu cầu)
+.agent/
+.gemini/
+.antigravity/
+
+# Database
+**/*.mdf
+**/*.ldf
+**/*.sqlite
+**/*.db
