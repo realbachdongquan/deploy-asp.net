@@ -25,4 +25,8 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
+# Cấu hình để tránh lỗi inotify limit trên Render
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+ENV ASPNETCORE_hostBuilder_reloadConfigOnChange=false
+
 ENTRYPOINT ["dotnet", "BachDongQuan_2123110434.dll"]
