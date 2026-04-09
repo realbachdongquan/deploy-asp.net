@@ -7,9 +7,15 @@ namespace ConnectDB.Data
     {
         public static void Initialize(AppDbContext context)
         {
-            // Clear all data for a fresh seed in development
-            context.Database.EnsureDeleted();
-            context.Database.EnsureCreated();
+            // Do NOT delete DB in production!
+            // context.Database.EnsureDeleted(); 
+            
+            // Ensure any pending migrations are applied (handled in Program.cs already)
+            
+            if (context.Users.Any())
+            {
+                return; // DB already has data, stay safe.
+            }
 
             // 1. Genres
             var action = new Genre { Name = "Action", Slug = "action" };
