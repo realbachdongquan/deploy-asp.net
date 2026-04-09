@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BachDongQuan_2123110434.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260409064109_InitialPostgres")]
+    [Migration("20260409064540_InitialPostgres")]
     partial class InitialPostgres
     {
         /// <inheritdoc />
