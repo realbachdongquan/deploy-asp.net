@@ -5,12 +5,11 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy .csproj và restore packages (Render có internet → tải được Npgsql)
-COPY ["BachDongQuan_2123110434/BachDongQuan_2123110434.csproj", "BachDongQuan_2123110434/"]
-RUN dotnet restore "BachDongQuan_2123110434/BachDongQuan_2123110434.csproj"
+COPY ["BachDongQuan_2123110434.csproj", "."]
+RUN dotnet restore "BachDongQuan_2123110434.csproj"
 
 # Copy toàn bộ code và build
 COPY . .
-WORKDIR "/src/BachDongQuan_2123110434"
 RUN dotnet publish "BachDongQuan_2123110434.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # ──────────────────────────────────────────
