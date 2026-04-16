@@ -2,6 +2,7 @@ using ConnectDB.Data;
 using ConnectDB.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -17,14 +18,20 @@ public class TicketsController : ControllerBase
     }
 
     // ADMIN: GET api/tickets
-    [HttpGet]
-    public async Task<IActionResult> GetTickets()
+    public async Task<IActionResult> GetTickets([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        return Ok(await _context.Tickets
+        var query = _context.Tickets
             .Include(t => t.User)
             .Include(t => t.Showtime).ThenInclude(s => s.Movie)
-            .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync());
+            .OrderByDescending(t => t.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+        var tickets = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(new PagedResult<Ticket>(tickets, totalCount, page, pageSize));
     }
 
     // ADMIN/USER: GET api/tickets/id

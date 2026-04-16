@@ -3,6 +3,7 @@ using ConnectDB.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -18,11 +19,15 @@ public class GenresController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetGenres()
+    public async Task<IActionResult> GetGenres([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
-        return Ok(await _context.Genres.ToListAsync());
+        var query = _context.Genres.AsQueryable();
+        var totalCount = await query.CountAsync();
+        var genres = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return Ok(new PagedResult<Genre>(genres, totalCount, page, pageSize));
     }
 
     [HttpGet("{id}")]

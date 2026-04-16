@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Pencil, Trash2, Plus, Users } from 'lucide-react';
 import Drawer from '../components/Drawer';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
 
 export default function CrewMembersPage() {
   const [crew, setCrew] = useState([]);
@@ -13,10 +14,19 @@ export default function CrewMembersPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(100);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchCrew = async () => {
     try {
-      const res = await api.get('/crewmembers');
-      setCrew(res.data);
+      setLoading(true);
+      const res = await api.get(`/crewmembers?page=${page}&pageSize=${pageSize}`);
+      setCrew(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -24,7 +34,7 @@ export default function CrewMembersPage() {
     }
   };
 
-  useEffect(() => { fetchCrew(); }, []);
+  useEffect(() => { fetchCrew(); }, [page, pageSize]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -102,6 +112,7 @@ export default function CrewMembersPage() {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
+              {/* ... table content ... */}
               <thead>
                 <tr>
                   <th style={{ paddingLeft: '2rem' }}>Name</th>
@@ -131,6 +142,15 @@ export default function CrewMembersPage() {
                 ))}
               </tbody>
             </table>
+            
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>

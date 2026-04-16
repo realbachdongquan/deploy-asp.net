@@ -3,6 +3,7 @@ using ConnectDB.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -18,10 +19,11 @@ public class UsersController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetUsers()
+    public async Task<IActionResult> GetUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var users = await _context.Users
+        var query = _context.Users.AsQueryable();
+        var totalCount = await query.CountAsync();
+        var users = await query
             .Select(u => new {
                 u.Id,
                 u.Email,
@@ -31,8 +33,10 @@ public class UsersController : ControllerBase
                 u.IsVerified,
                 u.CreatedAt
             })
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
-        return Ok(users);
+        return Ok(new PagedResult<object>(users, totalCount, page, pageSize));
     }
 
     [HttpGet("{id}")]

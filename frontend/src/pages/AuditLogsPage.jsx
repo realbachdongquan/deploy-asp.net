@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { History, Shield, Calendar, Terminal } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchLogs = async () => {
     try {
-      const res = await api.get('/auditlogs');
-      setLogs(res.data);
+      setLoading(true);
+      const res = await api.get(`/auditlogs?page=${page}&pageSize=${pageSize}`);
+      setLogs(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -17,7 +27,7 @@ export default function AuditLogsPage() {
     }
   };
 
-  useEffect(() => { fetchLogs(); }, []);
+  useEffect(() => { fetchLogs(); }, [page, pageSize]);
 
   const getActionColor = (action) => {
     if (action.includes('Delete')) return 'var(--danger)';
@@ -87,6 +97,14 @@ export default function AuditLogsPage() {
                 {logs.length === 0 && <tr><td colSpan="6" style={{ textAlign: 'center', padding: '5rem', color: '#333' }}>No audit trails recorded yet.</td></tr>}
               </tbody>
             </table>
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>

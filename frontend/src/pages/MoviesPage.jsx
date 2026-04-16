@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Pencil, Trash2, Plus, Film, UserPlus, X } from 'lucide-react';
 import Drawer from '../components/Drawer';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
 
 export default function MoviesPage() {
   const [movies, setMovies] = useState([]);
@@ -17,17 +18,26 @@ export default function MoviesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const [movRes, genRes, crewRes] = await Promise.all([
-        api.get('/movies'),
+        api.get(`/movies?page=${page}&pageSize=${pageSize}`),
         api.get('/genres'),
         api.get('/crewmembers')
       ]);
-      setMovies(movRes.data);
-      setAllGenres(genRes.data);
-      setAllCrew(crewRes.data);
+      setMovies(movRes.data.items);
+      setTotalCount(movRes.data.totalCount);
+      setTotalPages(movRes.data.totalPages);
+      setAllGenres(genRes.data.items || genRes.data); // Support both paginated and non-paginated
+      setAllCrew(crewRes.data.items || crewRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -35,7 +45,7 @@ export default function MoviesPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [page, pageSize]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -144,6 +154,7 @@ export default function MoviesPage() {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
+              {/* ... table content remains same ... */}
               <thead>
                 <tr>
                   <th style={{ paddingLeft: '2rem' }}>ID</th>
@@ -185,6 +196,15 @@ export default function MoviesPage() {
                 ))}
               </tbody>
             </table>
+            
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>

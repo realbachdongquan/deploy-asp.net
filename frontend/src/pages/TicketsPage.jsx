@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Trash2, Ticket as TicketIcon, Search, Filter, Eye } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Drawer from '../components/Drawer';
+import Pagination from '../components/Pagination';
 
 export default function TicketsPage() {
   const [tickets, setTickets] = useState([]);
@@ -12,10 +13,19 @@ export default function TicketsPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchTickets = async () => {
     try {
-      const res = await api.get('/tickets');
-      setTickets(res.data);
+      setLoading(true);
+      const res = await api.get(`/tickets?page=${page}&pageSize=${pageSize}`);
+      setTickets(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -23,7 +33,7 @@ export default function TicketsPage() {
     }
   };
 
-  useEffect(() => { fetchTickets(); }, []);
+  useEffect(() => { fetchTickets(); }, [page, pageSize]);
 
   const openView = (ticket) => {
     setSelectedTicket(ticket);
@@ -101,6 +111,15 @@ export default function TicketsPage() {
                 ))}
               </tbody>
             </table>
+            
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>

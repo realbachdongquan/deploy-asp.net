@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Pencil, Trash2, UserCog, ShieldCheck, Mail, Calendar } from 'lucide-react';
 import Drawer from '../components/Drawer';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -13,10 +14,19 @@ export default function UsersPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/users');
-      setUsers(res.data);
+      setLoading(true);
+      const res = await api.get(`/users?page=${page}&pageSize=${pageSize}`);
+      setUsers(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -24,7 +34,7 @@ export default function UsersPage() {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { fetchUsers(); }, [page, pageSize]);
 
   const openEdit = (user) => {
     setEditingUser(user);
@@ -144,6 +154,15 @@ export default function UsersPage() {
                 ))}
               </tbody>
             </table>
+            
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>

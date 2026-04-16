@@ -3,6 +3,7 @@ using ConnectDB.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -20,7 +21,7 @@ public class MoviesController : ControllerBase
     // DISCOVERY (PUBLIC): GET api/movies?status=NowPlaying
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetMovies([FromQuery] string? status)
+    public async Task<IActionResult> GetMovies([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Movies.AsQueryable();
 
@@ -29,12 +30,15 @@ public class MoviesController : ControllerBase
             query = query.Where(m => m.Status == status);
         }
 
+        var totalCount = await query.CountAsync();
         var movies = await query
             .Include(m => m.MovieGenres).ThenInclude(mg => mg.Genre)
             .OrderByDescending(m => m.ReleaseDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return Ok(movies);
+        return Ok(new PagedResult<Movie>(movies, totalCount, page, pageSize));
     }
 
     // DISCOVERY (PUBLIC): GET api/movies/id

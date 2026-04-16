@@ -3,6 +3,8 @@ using ConnectDB.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 

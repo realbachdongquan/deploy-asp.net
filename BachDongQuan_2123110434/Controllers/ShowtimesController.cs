@@ -3,6 +3,7 @@ using ConnectDB.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -17,15 +18,20 @@ public class ShowtimesController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetShowtimes()
+    public async Task<IActionResult> GetShowtimes([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        return Ok(await _context.Showtimes
+        var query = _context.Showtimes
             .Include(s => s.Movie)
             .Include(s => s.Room).ThenInclude(r => r.Cinema)
-            .OrderByDescending(s => s.StartTime)
-            .ToListAsync());
+            .OrderByDescending(s => s.StartTime);
+
+        var totalCount = await query.CountAsync();
+        var showtimes = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(new PagedResult<Showtime>(showtimes, totalCount, page, pageSize));
     }
 
     [HttpGet("movie/{movieId}")]

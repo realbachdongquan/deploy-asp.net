@@ -1,16 +1,26 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { CreditCard, Search, Filter, Download, ExternalLink } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('All');
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchPayments = async () => {
     try {
-      const res = await api.get('/payments');
-      setPayments(res.data);
+      setLoading(true);
+      const res = await api.get(`/payments?page=${page}&pageSize=${pageSize}`);
+      setPayments(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -18,7 +28,7 @@ export default function PaymentsPage() {
     }
   };
 
-  useEffect(() => { fetchPayments(); }, []);
+  useEffect(() => { fetchPayments(); }, [page, pageSize]);
 
   const filteredPayments = filterStatus === 'All' 
     ? payments 
@@ -111,6 +121,15 @@ export default function PaymentsPage() {
           {filteredPayments.length === 0 && (
             <div style={{ padding: '5rem', textAlign: 'center', color: '#444' }}>No transactions match your filters.</div>
           )}
+          
+          <Pagination 
+            pageNumber={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+          />
         </div>
       </div>
     </div>

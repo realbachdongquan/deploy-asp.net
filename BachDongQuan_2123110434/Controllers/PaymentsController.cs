@@ -3,6 +3,7 @@ using ConnectDB.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -19,14 +20,19 @@ public class PaymentsController : ControllerBase
     }
 
     // GET: api/payments
-    [HttpGet]
-    public async Task<IActionResult> GetPayments()
+    public async Task<IActionResult> GetPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
-        var payments = await _context.Payments
+        var query = _context.Payments
             .Include(p => p.Ticket).ThenInclude(t => t.User)
-            .OrderByDescending(p => p.CreatedAt)
+            .OrderByDescending(p => p.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+        var payments = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
-        return Ok(payments);
+
+        return Ok(new PagedResult<Payment>(payments, totalCount, page, pageSize));
     }
 
     // GET: api/payments/id

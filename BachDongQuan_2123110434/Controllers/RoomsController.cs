@@ -2,6 +2,7 @@ using ConnectDB.Data;
 using ConnectDB.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -16,10 +17,15 @@ public class RoomsController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetRooms()
+    public async Task<IActionResult> GetRooms([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        return Ok(await _context.Rooms.Include(r => r.Cinema).ToListAsync());
+        var query = _context.Rooms.Include(r => r.Cinema);
+        var totalCount = await query.CountAsync();
+        var rooms = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return Ok(new PagedResult<Room>(rooms, totalCount, page, pageSize));
     }
 
     [HttpGet("{id}")]

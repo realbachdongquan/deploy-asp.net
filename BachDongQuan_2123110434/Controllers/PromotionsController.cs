@@ -3,6 +3,7 @@ using ConnectDB.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -18,10 +19,15 @@ public class PromotionsController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetPromotions()
+    public async Task<IActionResult> GetPromotions([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        return Ok(await _context.Promotions.ToListAsync());
+        var query = _context.Promotions.AsQueryable();
+        var totalCount = await query.CountAsync();
+        var promos = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return Ok(new PagedResult<Promotion>(promos, totalCount, page, pageSize));
     }
 
     [HttpGet("{id}")]

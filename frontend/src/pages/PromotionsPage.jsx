@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Pencil, Trash2, Plus, Sparkles, Calendar } from 'lucide-react';
 import Drawer from '../components/Drawer';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
 
 export default function PromotionsPage() {
   const [promos, setPromos] = useState([]);
@@ -18,10 +19,19 @@ export default function PromotionsPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchPromos = async () => {
     try {
-      const res = await api.get('/promotions');
-      setPromos(res.data);
+      setLoading(true);
+      const res = await api.get(`/promotions?page=${page}&pageSize=${pageSize}`);
+      setPromos(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -29,7 +39,7 @@ export default function PromotionsPage() {
     }
   };
 
-  useEffect(() => { fetchPromos(); }, []);
+  useEffect(() => { fetchPromos(); }, [page, pageSize]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -157,6 +167,15 @@ export default function PromotionsPage() {
                 })}
               </tbody>
             </table>
+            
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>

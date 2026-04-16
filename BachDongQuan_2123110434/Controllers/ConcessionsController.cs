@@ -2,6 +2,7 @@ using ConnectDB.Data;
 using ConnectDB.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -16,10 +17,15 @@ public class ConcessionsController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetConcessions()
+    public async Task<IActionResult> GetConcessions([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        return Ok(await _context.Concessions.ToListAsync());
+        var query = _context.Concessions.AsQueryable();
+        var totalCount = await query.CountAsync();
+        var concessions = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return Ok(new PagedResult<Concession>(concessions, totalCount, page, pageSize));
     }
 
     [HttpGet("{id}")]

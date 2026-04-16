@@ -3,6 +3,7 @@ using ConnectDB.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -18,11 +19,15 @@ public class CrewMembersController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetCrewMembers()
+    public async Task<IActionResult> GetCrewMembers([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
-        return Ok(await _context.CrewMembers.ToListAsync());
+        var query = _context.CrewMembers.AsQueryable();
+        var totalCount = await query.CountAsync();
+        var members = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return Ok(new PagedResult<CrewMember>(members, totalCount, page, pageSize));
     }
 
     [HttpGet("{id}")]

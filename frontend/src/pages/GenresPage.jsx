@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Pencil, Trash2, Plus, Tag } from 'lucide-react';
 import Drawer from '../components/Drawer';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
 
 export default function GenresPage() {
   const [genres, setGenres] = useState([]);
@@ -13,10 +14,19 @@ export default function GenresPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // Pagination State (Default 100 for genres)
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(100);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchGenres = async () => {
     try {
-      const res = await api.get('/genres');
-      setGenres(res.data);
+      setLoading(true);
+      const res = await api.get(`/genres?page=${page}&pageSize=${pageSize}`);
+      setGenres(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -24,7 +34,7 @@ export default function GenresPage() {
     }
   };
 
-  useEffect(() => { fetchGenres(); }, []);
+  useEffect(() => { fetchGenres(); }, [page, pageSize]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -121,6 +131,15 @@ export default function GenresPage() {
                 ))}
               </tbody>
             </table>
+            
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>
