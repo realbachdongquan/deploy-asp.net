@@ -1,6 +1,9 @@
 import * as signalR from "@microsoft/signalr";
 
-const HUB_URL = "http://localhost:5018/hub/showtime";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5018/api';
+// Extract base URL by removing /api suffix if it exists
+const BASE_URL = API_URL.replace(/\/api$/, "");
+const HUB_URL = `${BASE_URL}/hub/showtime`;
 
 class ShowtimeSignalR {
   connection = null;
