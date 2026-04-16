@@ -64,7 +64,7 @@ git remote -v
 | **Name** | `deploy-asp-net` |
 | **Language** | `Docker` |
 | **Branch** | `main` |
-| **Root Directory** | `BachDongQuan_2123110434` |
+| **Root Directory** | `Cinema.Backend` |
 | **Instance Type** | `Free` |
 
 ### 2.2. Thêm Environment Variables

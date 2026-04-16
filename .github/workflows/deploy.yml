@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'BachDongQuan_2123110434/**'
+      - 'Cinema.Backend/**'
       - '.github/workflows/deploy.yml'
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker Image
-        run: docker build -t cinema-backend ./BachDongQuan_2123110434
+        run: docker build -t cinema-backend ./Cinema.Backend
 
       # Render auto-deploys when we push to GitHub if hooked up correctly.
       # This workflow is mainly for Testing and keeping track of builds.
