@@ -22,8 +22,8 @@ public class UserWatchlist
 
     [JsonIgnore]
     [ForeignKey("UserId")]
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 
     [ForeignKey("MovieId")]
-    public Movie Movie { get; set; } = null!;
+    public Movie? Movie { get; set; }
 }

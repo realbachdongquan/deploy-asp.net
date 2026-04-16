@@ -23,8 +23,8 @@ public class TicketConcession
 
     [JsonIgnore]
     [ForeignKey("TicketId")]
-    public Ticket Ticket { get; set; } = null!;
+    public Ticket? Ticket { get; set; }
 
     [ForeignKey("ConcessionId")]
-    public Concession Concession { get; set; } = null!;
+    public Concession? Concession { get; set; }
 }

@@ -28,9 +28,9 @@ public class Review : BaseEntity
 
     [JsonIgnore]
     [ForeignKey("MovieId")]
-    public Movie Movie { get; set; } = null!;
+    public Movie? Movie { get; set; }
 
     [JsonIgnore]
     [ForeignKey("UserId")]
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }

@@ -27,10 +27,10 @@ public class Ticket : BaseEntity
 
     [JsonIgnore]
     [ForeignKey("UserId")]
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 
     [ForeignKey("ShowtimeId")]
-    public Showtime Showtime { get; set; } = null!;
+    public Showtime? Showtime { get; set; }
 
-    public ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
+    public ICollection<TicketSeat>? TicketSeats { get; set; } = new List<TicketSeat>();
 }

@@ -25,5 +25,5 @@ public class Seat : BaseEntity
 
     [JsonIgnore]
     [ForeignKey("RoomId")]
-    public Room Room { get; set; } = null!;
+    public Room? Room { get; set; }
 }

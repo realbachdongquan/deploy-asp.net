@@ -28,5 +28,5 @@ public class Payment : BaseEntity
 
     [JsonIgnore]
     [ForeignKey("TicketId")]
-    public Ticket Ticket { get; set; } = null!;
+    public Ticket? Ticket { get; set; }
 }

@@ -25,8 +25,8 @@ public class Showtime : BaseEntity
     public bool Status { get; set; } = true;
 
     [ForeignKey("MovieId")]
-    public Movie Movie { get; set; } = null!;
+    public Movie? Movie { get; set; }
 
     [ForeignKey("RoomId")]
-    public Room Room { get; set; } = null!;
+    public Room? Room { get; set; }
 }

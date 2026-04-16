@@ -24,8 +24,8 @@ public class Room : BaseEntity
 
     [JsonIgnore]
     [ForeignKey("CinemaId")]
-    public Cinema Cinema { get; set; } = null!;
+    public Cinema? Cinema { get; set; }
 
     [JsonIgnore]
-    public ICollection<Seat> Seats { get; set; } = new List<Seat>();
+    public ICollection<Seat>? Seats { get; set; } = new List<Seat>();
 }

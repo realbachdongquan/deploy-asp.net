@@ -26,13 +26,13 @@ public class SeatLock : BaseEntity
 
     [JsonIgnore]
     [ForeignKey("ShowtimeId")]
-    public Showtime Showtime { get; set; } = null!;
+    public Showtime? Showtime { get; set; }
 
     [JsonIgnore]
     [ForeignKey("SeatId")]
-    public Seat Seat { get; set; } = null!;
+    public Seat? Seat { get; set; }
 
     [JsonIgnore]
     [ForeignKey("UserId")]
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }
