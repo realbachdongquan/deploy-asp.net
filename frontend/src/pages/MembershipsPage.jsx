@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Pencil, Trash2, Award, Gem, User } from 'lucide-react';
 import Drawer from '../components/Drawer';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
 
 export default function MembershipsPage() {
   const [memberships, setMemberships] = useState([]);
@@ -13,10 +14,19 @@ export default function MembershipsPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchMemberships = async () => {
     try {
-      const res = await api.get('/memberships');
-      setMemberships(res.data);
+      setLoading(true);
+      const res = await api.get(`/memberships?page=${page}&pageSize=${pageSize}`);
+      setMemberships(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -24,7 +34,7 @@ export default function MembershipsPage() {
     }
   };
 
-  useEffect(() => { fetchMemberships(); }, []);
+  useEffect(() => { fetchMemberships(); }, [page, pageSize]);
 
   const openEdit = (m) => {
     setEditingId(m.id);
@@ -109,6 +119,15 @@ export default function MembershipsPage() {
                 ))}
               </tbody>
             </table>
+
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>
@@ -116,7 +135,7 @@ export default function MembershipsPage() {
       <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title="EDIT MEMBERSHIP">
         <form onSubmit={handleSubmit} className="drawer-form">
           <div className="form-group">
-            <label>Tier Tier</label>
+            <label>Loyalty Tier</label>
             <select value={formData.tierName} onChange={e => setFormData({...formData, tierName: e.target.value})}>
               <option value="Standard">Standard</option>
               <option value="Gold">Gold</option>

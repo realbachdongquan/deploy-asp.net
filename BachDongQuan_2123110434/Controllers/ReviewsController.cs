@@ -1,5 +1,6 @@
 using ConnectDB.Data;
 using ConnectDB.Models;
+using ConnectDB.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,12 +21,17 @@ public class ReviewsController : ControllerBase
     // GET: api/Reviews/movie/5
     [HttpGet("movie/{movieId}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetMovieReviews(int movieId)
+    public async Task<IActionResult> GetMovieReviews(int movieId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var reviews = await _context.Reviews
+        var query = _context.Reviews
             .Include(r => r.User)
             .Where(r => r.MovieId == movieId)
-            .OrderByDescending(r => r.CreatedAt)
+            .OrderByDescending(r => r.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+        var reviews = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(r => new {
                 r.Id,
                 r.Score,
@@ -36,17 +42,22 @@ public class ReviewsController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(reviews);
+        return Ok(new PagedResult<object>(reviews, totalCount, page, pageSize));
     }
 
     [HttpGet("all")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetAllReviews()
+    public async Task<IActionResult> GetAllReviews([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var reviews = await _context.Reviews
+        var query = _context.Reviews
             .Include(r => r.Movie)
             .Include(r => r.User)
-            .OrderByDescending(r => r.CreatedAt)
+            .OrderByDescending(r => r.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+        var reviews = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(r => new {
                 r.Id,
                 r.Score,
@@ -57,7 +68,8 @@ public class ReviewsController : ControllerBase
                 User = new { r.User.FullName }
             })
             .ToListAsync();
-        return Ok(reviews);
+
+        return Ok(new PagedResult<object>(reviews, totalCount, page, pageSize));
     }
 
     // POST: api/Reviews

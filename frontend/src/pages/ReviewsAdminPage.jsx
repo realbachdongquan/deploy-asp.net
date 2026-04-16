@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Trash2, MessageSquare, Star, User } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
 
 export default function ReviewsAdminPage() {
   const [reviews, setReviews] = useState([]);
@@ -9,19 +10,27 @@ export default function ReviewsAdminPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const fetchAllReviews = async () => {
     try {
-      const res = await api.get('/reviews/all'); // Need to handle this endpoint
-      setReviews(res.data);
+      setLoading(true);
+      const res = await api.get(`/reviews/all?page=${page}&pageSize=${pageSize}`);
+      setReviews(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error(err);
-      // Fallback: If "all" doesn't exist, we might need a general GET
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchAllReviews(); }, []);
+  useEffect(() => { fetchAllReviews(); }, [page, pageSize]);
 
   const handleDeleteClick = (id) => {
     setDeleteId(id);
@@ -98,6 +107,15 @@ export default function ReviewsAdminPage() {
                 {reviews.length === 0 && <tr><td colSpan="5" style={{ textAlign: 'center', padding: '5rem', color: '#333' }}>No reviews found for moderation.</td></tr>}
               </tbody>
             </table>
+
+            <Pagination 
+              pageNumber={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
         )}
       </div>
