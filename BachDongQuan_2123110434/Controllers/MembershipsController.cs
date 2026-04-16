@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectDB.DTOs;
-using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers;
 
@@ -21,10 +20,15 @@ public class MembershipsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMemberships()
+    [AllowAnonymous]
+    public async Task<IActionResult> GetMemberships([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var memberships = await _context.Memberships
-            .Include(m => m.User)
+        var query = _context.Memberships.Include(m => m.User);
+        var totalCount = await query.CountAsync();
+        var memberships = await query
+            .OrderByDescending(m => m.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(m => new {
                 m.Id,
                 m.UserId,
@@ -34,7 +38,7 @@ public class MembershipsController : ControllerBase
                 m.ExpireDate
             })
             .ToListAsync();
-        return Ok(memberships);
+        return Ok(new PagedResult<object>(memberships, totalCount, page, pageSize));
     }
 
     [HttpGet("{id}")]

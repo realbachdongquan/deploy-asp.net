@@ -18,6 +18,7 @@ public class ShowtimesController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
     public async Task<IActionResult> GetShowtimes([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Showtimes

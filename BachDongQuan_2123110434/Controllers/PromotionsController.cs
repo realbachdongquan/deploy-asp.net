@@ -19,6 +19,7 @@ public class PromotionsController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
     public async Task<IActionResult> GetPromotions([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Promotions.AsQueryable();

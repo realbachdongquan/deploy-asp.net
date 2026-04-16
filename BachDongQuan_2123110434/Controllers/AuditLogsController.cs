@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectDB.DTOs;
+using ConnectDB.Models;
 
 namespace ConnectDB.Controllers;
 
@@ -18,6 +19,7 @@ public class AuditLogsController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
     public async Task<IActionResult> GetAuditLogs([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
         var query = _context.AuditLogs.OrderByDescending(l => l.Timestamp);

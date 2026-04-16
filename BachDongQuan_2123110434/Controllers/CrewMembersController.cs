@@ -19,6 +19,7 @@ public class CrewMembersController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
     public async Task<IActionResult> GetCrewMembers([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
         var query = _context.CrewMembers.AsQueryable();

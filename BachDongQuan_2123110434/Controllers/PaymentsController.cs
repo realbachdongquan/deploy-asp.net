@@ -20,6 +20,7 @@ public class PaymentsController : ControllerBase
     }
 
     // GET: api/payments
+    [HttpGet]
     public async Task<IActionResult> GetPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
         var query = _context.Payments

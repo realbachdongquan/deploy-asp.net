@@ -18,6 +18,7 @@ public class TicketsController : ControllerBase
     }
 
     // ADMIN: GET api/tickets
+    [HttpGet]
     public async Task<IActionResult> GetTickets([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Tickets

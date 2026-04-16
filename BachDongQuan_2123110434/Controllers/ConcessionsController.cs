@@ -17,6 +17,7 @@ public class ConcessionsController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
     public async Task<IActionResult> GetConcessions([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Concessions.AsQueryable();

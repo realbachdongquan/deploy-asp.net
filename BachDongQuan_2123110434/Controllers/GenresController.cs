@@ -19,6 +19,7 @@ public class GenresController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
     public async Task<IActionResult> GetGenres([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
         var query = _context.Genres.AsQueryable();
