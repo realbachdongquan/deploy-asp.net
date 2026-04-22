@@ -12,10 +12,63 @@ namespace ConnectDB.Controllers;
 public class MoviesController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ConnectDB.Services.IAIService _aiService;
 
-    public MoviesController(AppDbContext context)
+    public MoviesController(AppDbContext context, ConnectDB.Services.IAIService aiService)
     {
         _context = context;
+        _aiService = aiService;
+    }
+
+    // AI RECOMMENDATIONS (PRIVATE): GET api/movies/recommendations
+    [HttpGet("recommendations")]
+    [Authorize]
+    public async Task<IActionResult> GetRecommendations()
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        // 1. Lấy danh sách phim đã xem của User
+        var watchedMovieTitles = await _context.UserWatchlists
+            .Where(w => w.UserId == userId && w.Status == "Watched")
+            .Include(w => w.Movie)
+            .Select(w => w.Movie!.Title)
+            .ToListAsync();
+
+        if (!watchedMovieTitles.Any())
+        {
+            // Nếu chưa xem phim nào, gợi ý các phim hot nhất hiện nay
+            var hotMovies = await _context.Movies
+                .Where(m => m.Status == "NowPlaying")
+                .OrderByDescending(m => m.ImdbScore)
+                .Take(5)
+                .ToListAsync();
+            return Ok(hotMovies);
+        }
+
+        // 2. Lấy danh sách tất cả các phim đang chiếu hoặc sắp chiếu
+        var availableMovies = await _context.Movies
+            .Where(m => m.Status == "NowPlaying" || m.Status == "ComingSoon")
+            .ToListAsync();
+
+        var availableTitles = availableMovies.Select(m => m.Title).ToList();
+
+        // 3. Gọi AI để lấy danh sách tên phim gợi ý
+        var recommendedTitles = await _aiService.GetMovieRecommendationsAsync(watchedMovieTitles, availableTitles);
+
+        // 4. Map tên phim về Object Movie thật trong DB
+        var recommendedMovies = availableMovies
+            .Where(m => recommendedTitles.Contains(m.Title))
+            .ToList();
+
+        // Nếu AI không trả về kết quả hợp lệ, fallback về phim hot
+        if (!recommendedMovies.Any())
+        {
+            recommendedMovies = availableMovies.OrderByDescending(m => m.ImdbScore).Take(5).ToList();
+        }
+
+        return Ok(recommendedMovies);
     }
 
     // DISCOVERY (PUBLIC): GET api/movies?status=NowPlaying

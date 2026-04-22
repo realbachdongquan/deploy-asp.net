@@ -62,9 +62,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
 
+builder.Services.AddHttpClient<ConnectDB.Services.IAIService, ConnectDB.Services.AIService>();
 builder.Services.AddScoped<ConnectDB.Services.IAuthService, ConnectDB.Services.AuthService>();
 builder.Services.AddScoped<ConnectDB.Services.IBookingService, ConnectDB.Services.BookingService>();
 builder.Services.AddHostedService<ConnectDB.BackgroundServices.SeatLockCleanupService>();
+builder.Services.AddHostedService<ConnectDB.BackgroundServices.ReviewSentimentWorker>();
 
 var app = builder.Build();
 

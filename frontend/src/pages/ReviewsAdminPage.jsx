@@ -79,6 +79,7 @@ export default function ReviewsAdminPage() {
                   <th>Movie</th>
                   <th>Rating</th>
                   <th style={{ width: '40%' }}>Comment</th>
+                  <th>AI Sentiment</th>
                   <th style={{ textAlign: 'right', paddingRight: '2rem' }}>Actions</th>
                 </tr>
               </thead>
@@ -99,6 +100,25 @@ export default function ReviewsAdminPage() {
                       </div>
                     </td>
                     <td style={{ fontSize: '0.85rem', color: '#666' }}>{r.comment || '(No comment)'}</td>
+                    <td>
+                      {r.sentiment ? (
+                        <span style={{ 
+                          fontSize: '0.7rem', 
+                          padding: '0.2rem 0.5rem', 
+                          borderRadius: '12px',
+                          background: r.sentiment === 'Positive' ? 'rgba(34, 197, 94, 0.1)' : 
+                                      r.sentiment === 'Negative' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(107, 114, 128, 0.1)',
+                          color: r.sentiment === 'Positive' ? '#22c55e' : 
+                                 r.sentiment === 'Negative' ? '#ef4444' : '#9ca3af',
+                          border: `1px solid ${r.sentiment === 'Positive' ? 'rgba(34, 197, 94, 0.2)' : 
+                                                 r.sentiment === 'Negative' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 114, 128, 0.2)'}`
+                        }}>
+                          {r.sentiment.toUpperCase()}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.7rem', color: '#444' }}>Processing...</span>
+                      )}
+                    </td>
                     <td style={{ textAlign: 'right', paddingRight: '2rem' }}>
                         <button className="action-btn delete" onClick={() => handleDeleteClick(r.id)}><Trash2 size={18} /></button>
                     </td>

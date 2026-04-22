@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Pencil, Trash2, Plus, Film, UserPlus, X } from 'lucide-react';
+import { Pencil, Trash2, Plus, Film, UserPlus, X, Sparkles } from 'lucide-react';
 import Drawer from '../components/Drawer';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Pagination from '../components/Pagination';
@@ -24,20 +24,23 @@ export default function MoviesPage() {
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [recommendedMovies, setRecommendedMovies] = useState([]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [movRes, genRes, crewRes] = await Promise.all([
+      const [movRes, genRes, crewRes, recRes] = await Promise.all([
         api.get(`/movies?page=${page}&pageSize=${pageSize}`),
         api.get('/genres'),
-        api.get('/crewmembers')
+        api.get('/crewmembers'),
+        api.get('/movies/recommendations').catch(() => ({ data: [] })) // Tránh lỗi nếu chưa đăng nhập hoặc API lỗi
       ]);
       setMovies(movRes.data.items);
       setTotalCount(movRes.data.totalCount);
       setTotalPages(movRes.data.totalPages);
-      setAllGenres(genRes.data.items || genRes.data); // Support both paginated and non-paginated
+      setAllGenres(genRes.data.items || genRes.data);
       setAllCrew(crewRes.data.items || crewRes.data);
+      setRecommendedMovies(recRes.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -136,7 +139,46 @@ export default function MoviesPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* ... Hero Section remains same ... */}
+      {/* AI Recommendations Section */}
+      {recommendedMovies.length > 0 && (
+        <div className="ui-panel" style={{ background: 'linear-gradient(45deg, #0a0a0a, #1a0505)', border: '1px solid rgba(229, 9, 20, 0.2)' }}>
+          <div style={{ padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ padding: '0.75rem', background: 'rgba(229, 9, 20, 0.2)', color: 'var(--primary)', borderRadius: '50%' }}>
+              <Sparkles size={24} />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'white', letterSpacing: '1px' }}>AI RECOMMENDED FOR YOU</h2>
+              <p style={{ margin: 0, fontSize: '0.75rem', color: '#888' }}>Based on your watch history and preferences</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '1.5rem', padding: '0 2rem 2rem 2rem', overflowX: 'auto' }}>
+            {recommendedMovies.map(m => (
+              <div key={m.id} style={{ minWidth: '200px', background: '#080808', border: '1px solid #222', borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ height: '120px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {m.posterUrl ? (
+                    <img src={m.posterUrl} alt={m.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Film size={40} color="#333" />
+                  )}
+                </div>
+                <div style={{ padding: '0.75rem' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>{m.imdbScore} IMDB</span>
+                    <button 
+                      onClick={() => openEdit(m)} 
+                      style={{ fontSize: '0.65rem', background: 'transparent', border: '1px solid #444', color: '#888', padding: '0.1rem 0.4rem', cursor: 'pointer' }}
+                    >
+                      VIEW
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="ui-panel">
         <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

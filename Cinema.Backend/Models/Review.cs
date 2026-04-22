@@ -22,6 +22,11 @@ public class Review : BaseEntity
     [MaxLength(2000)]
     public string? Comment { get; set; }
 
+    [MaxLength(20)]
+    public string? Sentiment { get; set; } // Positive, Neutral, Negative
+
+    public double? SentimentScore { get; set; } // -1.0 to 1.0
+
     public int LikesCount { get; set; } = 0;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
