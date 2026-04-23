@@ -202,7 +202,7 @@ public class BookingService : IBookingService
         {
             UserId = userId,
             ShowtimeId = request.ShowtimeId,
-            BookingCode = "BK" + ConnectDB.Utils.TimeUtils.GetVietnamTime().Ticks.ToString().Substring(10),
+            BookingCode = "BK" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
             TotalPrice = totalAmount,
             PaymentStatus = "Pending", 
             CreatedBy = userEmail

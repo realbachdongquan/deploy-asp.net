@@ -116,7 +116,12 @@ public class BookingController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            var message = ex.Message;
+            if (ex.InnerException != null)
+            {
+                message += " | Inner: " + ex.InnerException.Message;
+            }
+            return BadRequest(message);
         }
     }
 }
