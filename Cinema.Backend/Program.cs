@@ -25,7 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     {
         try {
             var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
-            npgsqlBuilder.MaximumPoolSize = 20;
+            npgsqlBuilder.MaxPoolSize = 20;
             connectionString = npgsqlBuilder.ToString();
         } catch {
             // Fallback nếu chuỗi kết nối quá dị
