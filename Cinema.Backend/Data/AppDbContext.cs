@@ -104,7 +104,8 @@ public class AppDbContext : DbContext
     {
         var auditEntries = OnBeforeSaveChanges();
         var result = await base.SaveChangesAsync(cancellationToken);
-        await OnAfterSaveChanges(auditEntries);
+        try { await OnAfterSaveChanges(auditEntries); } 
+        catch (Exception ex) { Console.WriteLine($"[AuditLog SKIP] {ex.Message}"); }
         return result;
     }
 
@@ -112,8 +113,8 @@ public class AppDbContext : DbContext
     {
         var auditEntries = OnBeforeSaveChanges();
         var result = base.SaveChanges();
-        // Use Task.Run only if we are in a sync context but need to call async
-        OnAfterSaveChanges(auditEntries).GetAwaiter().GetResult();
+        try { OnAfterSaveChanges(auditEntries).GetAwaiter().GetResult(); } 
+        catch (Exception ex) { Console.WriteLine($"[AuditLog SKIP] {ex.Message}"); }
         return result;
     }
 

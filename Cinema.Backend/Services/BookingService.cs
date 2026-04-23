@@ -76,14 +76,24 @@ public class BookingService : IBookingService
 
         foreach (var seatId in seatIds)
         {
-            var existingLock = await _context.SeatLocks
-                .FirstOrDefaultAsync(sl => sl.ShowtimeId == showtimeId && sl.SeatId == seatId);
+            // Chi tim lock con hieu luc (chua het han) - tranh zombie lock
+            var existingActiveLock = await _context.SeatLocks
+                .FirstOrDefaultAsync(sl => sl.ShowtimeId == showtimeId 
+                                        && sl.SeatId == seatId 
+                                        && sl.LockExpiresAt > now
+                                        && sl.UserId == userId);
 
-            if (existingLock != null)
+            // Xoa cac lock cu het han cua ghe nay
+            var expiredLocks = await _context.SeatLocks
+                .Where(sl => sl.ShowtimeId == showtimeId && sl.SeatId == seatId && sl.LockExpiresAt <= now)
+                .ToListAsync();
+            if (expiredLocks.Any()) _context.SeatLocks.RemoveRange(expiredLocks);
+
+            if (existingActiveLock != null)
             {
-                existingLock.UserId = userId;
-                existingLock.LockExpiresAt = DateTime.SpecifyKind(DateTime.UtcNow.Add(_lockDuration), DateTimeKind.Utc);
-                existingLock.CreatedBy = userEmail;
+                // Gia han lock hien tai
+                existingActiveLock.LockExpiresAt = DateTime.SpecifyKind(now.Add(_lockDuration), DateTimeKind.Utc);
+                existingActiveLock.CreatedBy = userEmail;
             }
             else
             {
@@ -93,7 +103,7 @@ public class BookingService : IBookingService
                     SeatId = seatId,
                     UserId = userId,
                     LockToken = Guid.NewGuid().ToString(),
-                    LockExpiresAt = DateTime.SpecifyKind(DateTime.UtcNow.Add(_lockDuration), DateTimeKind.Utc),
+                    LockExpiresAt = DateTime.SpecifyKind(now.Add(_lockDuration), DateTimeKind.Utc),
                     CreatedBy = userEmail
                 });
             }
