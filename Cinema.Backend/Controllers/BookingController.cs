@@ -1,6 +1,10 @@
 using System.Security.Claims;
 using ConnectDB.DTOs.Booking;
 using ConnectDB.Services;
+<<<<<<< HEAD
+using ConnectDB.Utils;
+=======
+>>>>>>> 7d9239482c49161f8c9542f4796931a539c7f1d2
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -96,7 +100,11 @@ public class BookingController : ControllerBase
                 var vnPayModel = new VnPaymentRequestModel
                 {
                     Amount = (double)result.TotalAmount,
+<<<<<<< HEAD
+                    CreatedDate = TimeUtils.GetVietnamTime(),
+=======
                     CreatedDate = DateTime.Now,
+>>>>>>> 7d9239482c49161f8c9542f4796931a539c7f1d2
                     Description = $"{userEmail} thanh toan ve {result.BookingCode}",
                     FullName = userEmail,
                     TicketId = result.TicketId
