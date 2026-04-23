@@ -37,6 +37,9 @@ builder.Services.AddCors(options => {
         policy.WithOrigins(
             "http://localhost:3000",
             "http://localhost:5173",
+            "https://www.bachdongquan.dev",
+            "https://bachdongquan.dev",
+            "https://deploy-asp-net.onrender.com",
             builder.Configuration["AllowedOrigins"] ?? "http://localhost:5173"
         )
               .AllowAnyMethod()
@@ -183,14 +186,31 @@ using (var scope = app.Services.CreateScope())
 
     // 2. Fix thủ công bảng AuditLogs (vì có thể Migration bị lệch)
     try {
+        // Sử dụng DO block để check cột trong Postgres an toàn hơn
         context.Database.ExecuteSqlRaw(@"
-            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""EntityName"" text DEFAULT '';
-            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""EntityId"" text DEFAULT '';
-            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""OldValues"" text;
-            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""NewValues"" text;
-            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""ChangedBy"" text;
-            ALTER TABLE ""AuditLogs"" ALTER COLUMN ""AdminUserId"" DROP NOT NULL;
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='AuditLogs' AND column_name='EntityName') THEN
+                    ALTER TABLE ""AuditLogs"" ADD COLUMN ""EntityName"" text DEFAULT '';
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='AuditLogs' AND column_name='EntityId') THEN
+                    ALTER TABLE ""AuditLogs"" ADD COLUMN ""EntityId"" text DEFAULT '';
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='AuditLogs' AND column_name='OldValues') THEN
+                    ALTER TABLE ""AuditLogs"" ADD COLUMN ""OldValues"" text;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='AuditLogs' AND column_name='NewValues') THEN
+                    ALTER TABLE ""AuditLogs"" ADD COLUMN ""NewValues"" text;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='AuditLogs' AND column_name='ChangedBy') THEN
+                    ALTER TABLE ""AuditLogs"" ADD COLUMN ""ChangedBy"" text;
+                END IF;
+                
+                -- Luôn đảm bảo AdminUserId là nullable
+                ALTER TABLE ""AuditLogs"" ALTER COLUMN ""AdminUserId"" DROP NOT NULL;
+            END $$;
         ");
+        Console.WriteLine("[SQL Fix] AuditLogs table checked and patched successfully.");
     } catch (Exception ex) {
         Console.WriteLine($"[SQL Fix Error] {ex.Message}");
     }
