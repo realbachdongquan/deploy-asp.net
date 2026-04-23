@@ -222,10 +222,15 @@ public class AuditEntry
     {
         var audit = new AuditLog();
         audit.EntityName = EntityName;
+        audit.TargetTable = EntityName; // Set TargetTable to avoid NULL constraint error
         audit.Timestamp = DateTime.UtcNow;
         audit.Action = Action;
         audit.ChangedBy = ChangedBy;
-        audit.EntityId = System.Text.Json.JsonSerializer.Serialize(KeyValues);
+        
+        var entityIdJson = System.Text.Json.JsonSerializer.Serialize(KeyValues);
+        audit.EntityId = entityIdJson;
+        audit.TargetId = entityIdJson; // Set TargetId for backward compatibility
+        
         audit.OldValues = OldValues.Count == 0 ? null : System.Text.Json.JsonSerializer.Serialize(OldValues);
         audit.NewValues = NewValues.Count == 0 ? null : System.Text.Json.JsonSerializer.Serialize(NewValues);
         return audit;
