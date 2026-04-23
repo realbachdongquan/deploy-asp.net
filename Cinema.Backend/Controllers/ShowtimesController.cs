@@ -9,6 +9,7 @@ namespace ConnectDB.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "Admin,Manager,Staff")]
 public class ShowtimesController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -19,18 +20,20 @@ public class ShowtimesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetShowtimes([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Showtimes
             .Include(s => s.Movie)
-            .Include(s => s.Room).ThenInclude(r => r.Cinema)
+            .Include(s => s.Room)
+                .ThenInclude(r => r != null ? r.Cinema : null)
             .OrderByDescending(s => s.StartTime);
 
         var totalCount = await query.CountAsync();
         var showtimes = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync<Showtime>();
 
         return Ok(new PagedResult<Showtime>(showtimes, totalCount, page, pageSize));
     }
@@ -40,10 +43,11 @@ public class ShowtimesController : ControllerBase
     public async Task<IActionResult> GetShowtimesByMovie(int movieId)
     {
         var showtimes = await _context.Showtimes
-            .Include(s => s.Room).ThenInclude(r => r.Cinema)
+            .Include(s => s.Room)
+                .ThenInclude(r => r != null ? r.Cinema : null)
             .Where(s => s.MovieId == movieId && s.StartTime > DateTime.UtcNow)
             .OrderBy(s => s.StartTime)
-            .ToListAsync();
+            .ToListAsync<Showtime>();
 
         return Ok(showtimes);
     }
@@ -54,7 +58,8 @@ public class ShowtimesController : ControllerBase
     {
         var showtime = await _context.Showtimes
             .Include(s => s.Movie)
-            .Include(s => s.Room).ThenInclude(r => r.Cinema)
+            .Include(s => s.Room)
+                .ThenInclude(r => r != null ? r.Cinema : null)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (showtime == null) return NotFound();

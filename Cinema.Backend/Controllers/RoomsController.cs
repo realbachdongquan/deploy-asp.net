@@ -1,6 +1,7 @@
 using ConnectDB.Data;
 using ConnectDB.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ConnectDB.DTOs;
 
@@ -8,6 +9,7 @@ namespace ConnectDB.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "Admin,Manager,Staff")]
 public class RoomsController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -18,6 +20,7 @@ public class RoomsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetRooms([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Rooms.Include(r => r.Cinema);
@@ -30,6 +33,7 @@ public class RoomsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetRoom(int id)
     {
         var room = await _context.Rooms

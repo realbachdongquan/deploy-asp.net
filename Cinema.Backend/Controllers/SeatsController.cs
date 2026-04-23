@@ -1,12 +1,14 @@
 using ConnectDB.Data;
 using ConnectDB.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectDB.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "Admin,Manager,Staff")]
 public class SeatsController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -17,12 +19,14 @@ public class SeatsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetSeats()
     {
         return Ok(await _context.Seats.Include(s => s.Room).ToListAsync());
     }
 
     [HttpGet("room/{roomId}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetSeatsByRoom(int roomId)
     {
         var seats = await _context.Seats
@@ -35,6 +39,7 @@ public class SeatsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetSeat(int id)
     {
         var seat = await _context.Seats.FindAsync(id);

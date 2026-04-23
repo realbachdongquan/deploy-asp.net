@@ -5,7 +5,7 @@ namespace ConnectDB.Models;
 
 public abstract class BaseEntity
 {
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = ConnectDB.Utils.TimeUtils.GetVietnamTime();
     
     [MaxLength(255)]
     public string? CreatedBy { get; set; }

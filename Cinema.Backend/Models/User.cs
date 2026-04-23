@@ -30,6 +30,9 @@ public class User : BaseEntity
 
     public bool IsVerified { get; set; } = false;
 
+    public string? ResetToken { get; set; }
+    public DateTime? ResetTokenExpiry { get; set; }
+
     // Navigation Properties
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public ICollection<UserWatchlist> Watchlists { get; set; } = new List<UserWatchlist>();

@@ -23,8 +23,6 @@ public class Ticket : BaseEntity
     [MaxLength(50)]
     public string PaymentStatus { get; set; } = "Pending"; // Pending, Paid, Cancelled
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     [JsonIgnore]
     [ForeignKey("UserId")]
     public User? User { get; set; }
@@ -32,5 +30,15 @@ public class Ticket : BaseEntity
     [ForeignKey("ShowtimeId")]
     public Showtime? Showtime { get; set; }
 
-    public ICollection<TicketSeat>? TicketSeats { get; set; } = new List<TicketSeat>();
+    public int? PromotionId { get; set; }
+    public int? UserPromotionId { get; set; }
+    public decimal DiscountAmount { get; set; } = 0;
+
+    [ForeignKey("PromotionId")]
+    public Promotion? Promotion { get; set; }
+
+    [ForeignKey("UserPromotionId")]
+    public UserPromotion? UserPromotion { get; set; }
+
+    public ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
 }

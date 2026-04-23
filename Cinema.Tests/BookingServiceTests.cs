@@ -3,17 +3,23 @@ using ConnectDB.Services;
 using ConnectDB.DTOs.Booking;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
+using Hangfire;
 
 namespace Cinema.Tests;
 
 public class BookingServiceTests : TestBase
 {
     private readonly BookingService _service;
+    private readonly Mock<ILogger<BookingService>> _mockLogger;
 
     public BookingServiceTests()
     {
-        _service = new BookingService(Context, MockCache.Object, MockHubContext.Object);
+        _mockLogger = CreateMockLogger<BookingService>();
+        var mockJobClient = new Mock<IBackgroundJobClient>();
+        _service = new BookingService(Context, MockCache.Object, MockHubContext.Object, _mockLogger.Object, mockJobClient.Object);
     }
 
     [Fact]

@@ -22,7 +22,6 @@ public class Room : BaseEntity
 
     public bool Status { get; set; } = true;
 
-    [JsonIgnore]
     [ForeignKey("CinemaId")]
     public Cinema? Cinema { get; set; }
 

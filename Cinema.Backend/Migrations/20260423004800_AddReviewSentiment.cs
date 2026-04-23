@@ -14,14 +14,12 @@ namespace BachDongQuan_2123110434.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "Sentiment",
                 table: "Reviews",
-                type: "character varying(20)",
                 maxLength: 20,
                 nullable: true);
 
             migrationBuilder.AddColumn<double>(
                 name: "SentimentScore",
                 table: "Reviews",
-                type: "double precision",
                 nullable: true);
         }
 

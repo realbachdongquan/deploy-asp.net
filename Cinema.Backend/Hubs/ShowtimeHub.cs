@@ -13,4 +13,14 @@ public class ShowtimeHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Showtime_{showtimeId}");
     }
+
+    public async Task SelectSeat(int showtimeId, int seatId, string userId)
+    {
+        await Clients.OthersInGroup($"Showtime_{showtimeId}").SendAsync("SeatSelected", seatId, userId);
+    }
+
+    public async Task UnselectSeat(int showtimeId, int seatId, string userId)
+    {
+        await Clients.OthersInGroup($"Showtime_{showtimeId}").SendAsync("SeatUnselected", seatId);
+    }
 }

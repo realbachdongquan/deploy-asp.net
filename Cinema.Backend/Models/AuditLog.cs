@@ -6,20 +6,18 @@ public class AuditLog
 {
     [Key]
     public int Id { get; set; }
+    
+    public string EntityName { get; set; } = string.Empty;
+    public string EntityId { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty; // Create, Update, Delete
+    public string? OldValues { get; set; }
+    public string? NewValues { get; set; }
+    public string? ChangedBy { get; set; }
+    public DateTime Timestamp { get; set; }
 
-    public int AdminUserId { get; set; }
-
-    [Required, MaxLength(100)]
-    public string Action { get; set; } = string.Empty;
-
-    [Required, MaxLength(100)]
-    public string TargetTable { get; set; } = string.Empty;
-
-    [Required, MaxLength(100)]
-    public string TargetId { get; set; } = string.Empty;
-
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-
-    [MaxLength(50)]
+    // Backward compatibility fields
+    public int? AdminUserId { get; set; }
+    public string? TargetTable { get; set; }
+    public string? TargetId { get; set; }
     public string? IpAddress { get; set; }
 }

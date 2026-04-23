@@ -24,9 +24,9 @@ export default function GenresPage() {
     try {
       setLoading(true);
       const res = await api.get(`/genres?page=${page}&pageSize=${pageSize}`);
-      setGenres(res.data.items);
-      setTotalCount(res.data.totalCount);
-      setTotalPages(res.data.totalPages);
+      setGenres(Array.isArray(res.data.items) ? res.data.items : Array.isArray(res.data) ? res.data : []);
+      setTotalCount(res.data.totalCount || 0);
+      setTotalPages(res.data.totalPages || 0);
     } catch (err) {
       console.error(err);
     } finally {

@@ -36,3 +36,39 @@ public class UserDto
     public string FullName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
 }
+
+public class UpdateProfileRequest
+{
+    [MaxLength(100)]
+    public string? FullName { get; set; }
+
+    [MaxLength(20)]
+    public string? PhoneNumber { get; set; }
+
+    [MaxLength(500)]
+    public string? AvatarUrl { get; set; }
+}
+
+public class ChangePasswordRequest
+{
+    [Required]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required, MinLength(6)]
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class ForgotPasswordRequest
+{
+    [Required, EmailAddress]
+    public string Email { get; set; } = string.Empty;
+}
+
+public class ResetPasswordRequest
+{
+    [Required]
+    public string Token { get; set; } = string.Empty;
+
+    [Required, MinLength(6)]
+    public string NewPassword { get; set; } = string.Empty;
+}

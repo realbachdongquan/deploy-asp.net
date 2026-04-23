@@ -345,3 +345,156 @@ label {
   cursor: not-allowed;
 }
 
+/* Premium UI Extensions */
+.movie-card-v2 {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.movie-card-v2:hover {
+  transform: translateY(-10px);
+}
+
+.movie-card-v2:hover img {
+  transform: scale(1.1);
+}
+
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 1.5rem;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.movie-card-v2:hover .card-overlay {
+  opacity: 1;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(229, 9, 20, 0.1);
+  border-left-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.showtime-btn:hover {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  transform: scale(1.05);
+}
+
+.showtime-btn:hover div {
+  color: white !important;
+}
+
+/* Seat Special Classes */
+.seat-btn:not(:disabled):hover {
+  transform: scale(1.2);
+  z-index: 10;
+  box-shadow: 0 0 15px rgba(255,255,255,0.2);
+}
+
+.seat-btn.selected {
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 5px var(--primary); }
+  50% { box-shadow: 0 0 20px var(--primary); }
+  100% { box-shadow: 0 0 5px var(--primary); }
+}
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.skeleton-card {
+  aspect-ratio: 2/3;
+  border-radius: 4px;
+}
+
+.skeleton-text {
+  height: 1rem;
+  width: 80%;
+  margin-top: 0.5rem;
+}
+
+.skeleton-text-sm {
+  height: 0.75rem;
+  width: 60%;
+  margin-top: 0.3rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 1024px) {
+  .movie-browse-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .movie-browse-hero h1 {
+    font-size: 2rem !important;
+  }
+  .movie-browse-hero p {
+    font-size: 0.85rem !important;
+  }
+  .movie-browse-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+    padding: 0 3% !important;
+  }
+  .movie-detail-hero {
+    flex-direction: column !important;
+    padding: 2rem 4% !important;
+  }
+  .movie-detail-poster {
+    width: 200px !important;
+    margin: 0 auto !important;
+  }
+  .booking-layout {
+    flex-direction: column !important;
+  }
+  .seat-picker-container {
+    overflow-x: auto;
+  }
+  footer {
+    padding: 2rem 4% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .movie-browse-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+  .movie-card-v2 {
+    font-size: 0.8rem;
+  }
+}
+

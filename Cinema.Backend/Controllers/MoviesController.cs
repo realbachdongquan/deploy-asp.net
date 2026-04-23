@@ -13,56 +13,61 @@ public class MoviesController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ConnectDB.Services.IAIService _aiService;
+    private readonly ConnectDB.Services.IAuditService _auditService;
 
-    public MoviesController(AppDbContext context, ConnectDB.Services.IAIService aiService)
+    public MoviesController(AppDbContext context, ConnectDB.Services.IAIService aiService, ConnectDB.Services.IAuditService auditService)
     {
         _context = context;
         _aiService = aiService;
+        _auditService = auditService;
     }
 
-    // AI RECOMMENDATIONS (PRIVATE): GET api/movies/recommendations
+    // AI RECOMMENDATIONS (PRIVATE/PUBLIC): GET api/movies/recommendations
     [HttpGet("recommendations")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<IActionResult> GetRecommendations()
     {
         var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        
         if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
-            return Unauthorized();
-
-        // 1. Lấy danh sách phim đã xem của User
-        var watchedMovieTitles = await _context.UserWatchlists
-            .Where(w => w.UserId == userId && w.Status == "Watched")
-            .Include(w => w.Movie)
-            .Select(w => w.Movie!.Title)
-            .ToListAsync();
-
-        if (!watchedMovieTitles.Any())
         {
-            // Nếu chưa xem phim nào, gợi ý các phim hot nhất hiện nay
             var hotMovies = await _context.Movies
                 .Where(m => m.Status == "NowPlaying")
                 .OrderByDescending(m => m.ImdbScore)
                 .Take(5)
-                .ToListAsync();
+                .ToListAsync<Movie>();
             return Ok(hotMovies);
         }
 
-        // 2. Lấy danh sách tất cả các phim đang chiếu hoặc sắp chiếu
+        var watchedMovieTitles = await _context.UserWatchlists
+            .Where(w => w.UserId == userId && w.Status == "Watched")
+            .Include(w => w.Movie)
+            .Select(w => w.Movie != null ? w.Movie.Title : "")
+            .Where(title => title != "")
+            .ToListAsync<string>();
+
+        if (!watchedMovieTitles.Any())
+        {
+            var hotMoviesList = await _context.Movies
+                .Where(m => m.Status == "NowPlaying")
+                .OrderByDescending(m => m.ImdbScore)
+                .Take(5)
+                .ToListAsync<Movie>();
+            return Ok(hotMoviesList);
+        }
+
         var availableMovies = await _context.Movies
             .Where(m => m.Status == "NowPlaying" || m.Status == "ComingSoon")
-            .ToListAsync();
+            .ToListAsync<Movie>();
 
         var availableTitles = availableMovies.Select(m => m.Title).ToList();
 
-        // 3. Gọi AI để lấy danh sách tên phim gợi ý
         var recommendedTitles = await _aiService.GetMovieRecommendationsAsync(watchedMovieTitles, availableTitles);
 
-        // 4. Map tên phim về Object Movie thật trong DB
         var recommendedMovies = availableMovies
             .Where(m => recommendedTitles.Contains(m.Title))
             .ToList();
 
-        // Nếu AI không trả về kết quả hợp lệ, fallback về phim hot
         if (!recommendedMovies.Any())
         {
             recommendedMovies = availableMovies.OrderByDescending(m => m.ImdbScore).Take(5).ToList();
@@ -71,10 +76,10 @@ public class MoviesController : ControllerBase
         return Ok(recommendedMovies);
     }
 
-    // DISCOVERY (PUBLIC): GET api/movies?status=NowPlaying
+    // DISCOVERY (PUBLIC): GET api/movies?status=NowPlaying&cinemaId=5
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetMovies([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetMovies([FromQuery] string? status, [FromQuery] int? cinemaId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Movies.AsQueryable();
 
@@ -83,18 +88,28 @@ public class MoviesController : ControllerBase
             query = query.Where(m => m.Status == status);
         }
 
+        if (cinemaId.HasValue)
+        {
+            var movieIdsInCinema = await _context.Showtimes
+                .Where(s => s.Room != null && s.Room.CinemaId == cinemaId.Value)
+                .Select(s => s.MovieId)
+                .Distinct()
+                .ToListAsync<int>();
+            
+            query = query.Where(m => movieIdsInCinema.Contains(m.Id));
+        }
+
         var totalCount = await query.CountAsync();
         var movies = await query
             .Include(m => m.MovieGenres).ThenInclude(mg => mg.Genre)
             .OrderByDescending(m => m.ReleaseDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync<Movie>();
 
         return Ok(new PagedResult<Movie>(movies, totalCount, page, pageSize));
     }
 
-    // DISCOVERY (PUBLIC): GET api/movies/id
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetMovie(int id)
@@ -109,11 +124,10 @@ public class MoviesController : ControllerBase
         return Ok(movie);
     }
 
-    // ADMIN: POST api/movies
     [HttpPost]
+    [Authorize(Roles = "Admin,Manager,Staff")]
     public async Task<IActionResult> CreateMovie(Movie movie)
     {
-        // Ensure relations are not trying to create new genres/crew if they exist
         if (movie.MovieGenres != null)
         {
             foreach (var mg in movie.MovieGenres) mg.Genre = null!; 
@@ -125,16 +139,16 @@ public class MoviesController : ControllerBase
 
         _context.Movies.Add(movie);
         await _context.SaveChangesAsync();
+        await _auditService.LogActionAsync("Create", "Movies", movie.Id.ToString());
         return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, movie);
     }
 
-    // ADMIN: PUT api/movies/id
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Manager,Staff")]
     public async Task<IActionResult> UpdateMovie(int id, Movie movie)
     {
         if (id != movie.Id) return BadRequest();
 
-        // 1. Dòng này để tránh lỗi Tracking trong EF
         var existingMovie = await _context.Movies
             .Include(m => m.MovieGenres)
             .Include(m => m.MovieCrews)
@@ -142,26 +156,30 @@ public class MoviesController : ControllerBase
 
         if (existingMovie == null) return NotFound();
 
-        // 2. Cập nhật thông tin cơ bản
         _context.Entry(existingMovie).CurrentValues.SetValues(movie);
 
-        // 3. Đồng bộ Genres
         existingMovie.MovieGenres.Clear();
-        foreach (var mg in movie.MovieGenres)
+        if (movie.MovieGenres != null)
         {
-            existingMovie.MovieGenres.Add(new MovieGenre { MovieId = id, GenreId = mg.GenreId });
+            foreach (var mg in movie.MovieGenres)
+            {
+                existingMovie.MovieGenres.Add(new MovieGenre { MovieId = id, GenreId = mg.GenreId });
+            }
         }
 
-        // 4. Đồng bộ Crew
         existingMovie.MovieCrews.Clear();
-        foreach (var mc in movie.MovieCrews)
+        if (movie.MovieCrews != null)
         {
-            existingMovie.MovieCrews.Add(new MovieCrew { MovieId = id, CrewId = mc.CrewId, Role = mc.Role, CharacterName = mc.CharacterName });
+            foreach (var mc in movie.MovieCrews)
+            {
+                existingMovie.MovieCrews.Add(new MovieCrew { MovieId = id, CrewId = mc.CrewId, Role = mc.Role, CharacterName = mc.CharacterName });
+            }
         }
 
         try
         {
             await _context.SaveChangesAsync();
+            await _auditService.LogActionAsync("Update", "Movies", id.ToString());
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -172,8 +190,8 @@ public class MoviesController : ControllerBase
         return NoContent();
     }
 
-    // ADMIN: DELETE api/movies/id
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,Manager,Staff")]
     public async Task<IActionResult> DeleteMovie(int id)
     {
         var movie = await _context.Movies.FindAsync(id);
@@ -181,7 +199,38 @@ public class MoviesController : ControllerBase
 
         _context.Movies.Remove(movie);
         await _context.SaveChangesAsync();
+        await _auditService.LogActionAsync("Delete", "Movies", id.ToString());
 
         return NoContent();
     }
+
+    [HttpPost("generate-content")]
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    public async Task<IActionResult> GenerateContent([FromBody] GenerateContentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title)) return BadRequest("Title is required");
+        var result = await _aiService.GenerateMovieContentAsync(request.Title);
+        if (result == null) return StatusCode(500, "Failed to generate content");
+        return Ok(result);
+    }
+
+    [HttpGet("crew/{crewId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetMoviesByCrewMember(int crewId)
+    {
+        var movieCrews = await _context.MovieCrews
+            .Where(mc => mc.CrewId == crewId)
+            .Include(mc => mc.Movie)
+            .ToListAsync<MovieCrew>();
+
+        var result = movieCrews
+            .Select(mc => mc.Movie)
+            .Where(m => m != null)
+            .Distinct()
+            .ToList();
+
+        return Ok(result);
+    }
+
+    public record GenerateContentRequest(string Title);
 }

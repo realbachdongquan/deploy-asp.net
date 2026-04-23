@@ -24,9 +24,9 @@ export default function CinemasPage() {
     try {
       setLoading(true);
       const res = await api.get(`/cinemas?page=${page}&pageSize=${pageSize}`);
-      setCinemas(res.data.items);
-      setTotalCount(res.data.totalCount);
-      setTotalPages(res.data.totalPages);
+      setCinemas(Array.isArray(res.data.items) ? res.data.items : Array.isArray(res.data) ? res.data : []);
+      setTotalCount(res.data.totalCount || 0);
+      setTotalPages(res.data.totalPages || 0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -117,7 +117,7 @@ export default function CinemasPage() {
                 </tr>
               </thead>
               <tbody>
-                {cinemas.map(c => (
+                {Array.isArray(cinemas) && cinemas.map(c => (
                   <tr key={c.id}>
                     <td style={{ paddingLeft: '2rem', color: '#444' }}>#{c.id}</td>
                     <td style={{ fontWeight: 600, color: 'white' }}>{c.name}</td>

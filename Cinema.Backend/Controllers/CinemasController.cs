@@ -9,6 +9,7 @@ namespace ConnectDB.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "Admin,Manager,Staff")]
 public class CinemasController : ControllerBase
 {
     private readonly AppDbContext _context;

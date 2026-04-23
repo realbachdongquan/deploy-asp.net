@@ -13,11 +13,13 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
+    private readonly IEmailService _emailService;
 
-    public AuthService(AppDbContext context, IConfiguration config)
+    public AuthService(AppDbContext context, IConfiguration config, IEmailService emailService)
     {
         _context = context;
         _config = config;
+        _emailService = emailService;
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -72,6 +74,51 @@ public class AuthService : IAuthService
 
         var token = GenerateJwtToken(user);
 
+        // Generate Welcome Discount 20%
+        var promoCode = $"WELCOME20-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+        var promotion = new Promotion
+        {
+            PromoCode = promoCode,
+            Description = $"Welcome discount for {user.FullName}",
+            DiscountPercentage = 20,
+            MaxDiscountAmount = 100000,
+            StartDate = ConnectDB.Utils.TimeUtils.GetVietnamTime(),
+            EndDate = ConnectDB.Utils.TimeUtils.GetVietnamTime().AddDays(30),
+            UsageLimit = 1,
+            CurrentUsage = 0,
+            SpecificEmail = user.Email,
+            IsActive = true,
+            IsPublic = false,
+            MaxSeatsPerOrder = 3
+        };
+
+        _context.Promotions.Add(promotion);
+        await _context.SaveChangesAsync();
+
+        var subject = "Chào mừng bạn đến với DWAN CINEMA - Quà tặng thành viên mới!";
+        var body = $@"
+            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px;'>
+                <h2 style='color: #E50914;'>Chào mừng {user.FullName}!</h2>
+                <p>Cảm ơn bạn đã đăng ký thành viên tại DWAN CINEMA.</p>
+                <p>Chúng tôi xin dành tặng bạn mã giảm giá <b>20%</b> cho lần đặt vé đầu tiên:</p>
+                <div style='background: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; color: #333; border: 2px dashed #E50914; margin: 20px 0;'>
+                    {promoCode}
+                </div>
+                <p style='font-size: 0.9rem; color: #666;'>* Mã giảm giá này chỉ dành riêng cho email của bạn và có hiệu lực trong vòng 30 ngày.</p>
+                <p>Chúc bạn có những giây phút giải trí tuyệt vời!</p>
+                <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
+                <p style='font-size: 0.8rem; color: #999; text-align: center;'>Đội ngũ DWAN CINEMA</p>
+            </div>";
+        
+        try
+        {
+            await _emailService.SendEmailAsync(user.Email, subject, body);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send welcome email: {ex.Message}");
+        }
+
         return new AuthResponse
         {
             Token = token,
@@ -95,6 +142,7 @@ public class AuthService : IAuthService
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
+            new Claim("role", user.Role), 
             new Claim(ClaimTypes.Role, user.Role),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };

@@ -4,27 +4,34 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Scalar.AspNetCore;
-
+using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using Hangfire;
+using Hangfire.SqlServer;
+using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+// builder.Services.AddControllers();
 
-// 1. Kết nối Database (PostgreSQL ở Production, SQL Server ở Development)
+// Sửa lỗi PostgreSQL DateTime Kind
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+// 1. Kết nối Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (builder.Environment.IsProduction())
+builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // Production: dùng PostgreSQL (Aiven)
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(connectionString));
-}
-else
-{
-    // Development: vẫn dùng SQL Server local
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(connectionString));
-}
+    if (connectionString != null && (connectionString.Contains("Host=") || connectionString.Contains("Port=") || connectionString.Contains("SSL Mode=") || connectionString.Contains("postgres://")))
+    {
+        options.UseNpgsql(connectionString);
+    }
+    else
+    {
+        options.UseSqlServer(connectionString);
+    }
+});
 
-// 2. Cấu hình CORS cho ReactJS
+// 2. Cấu hình CORS
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowReact", policy =>
         policy.WithOrigins(
@@ -34,7 +41,7 @@ builder.Services.AddCors(options => {
         )
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials()); // Bắt buộc cho SignalR
+              .AllowCredentials());
 });
 
 // 2.5. Cấu hình JWT Authentication
@@ -50,6 +57,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
+            // RoleClaimType = "role" // Use default mapping
         };
     });
 
@@ -57,20 +65,82 @@ builder.Services.AddControllers().AddJsonOptions(x =>
     x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Cinema API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            new string[] { }
+        }
+    });
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
 
+// 3. Cấu hình Hangfire
+builder.Services.AddHangfire(configuration => 
+{
+    configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings();
+
+    if (connectionString != null && (connectionString.Contains("Host=") || connectionString.Contains("Port=") || connectionString.Contains("postgres://")))
+    {
+        configuration.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString));
+    }
+    else
+    {
+        configuration.UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+            QueuePollInterval = TimeSpan.Zero,
+            UseRecommendedIsolationLevel = true,
+            DisableGlobalLocks = true
+        });
+    }
+});
+
+// builder.Services.AddHangfireServer();
+
 builder.Services.AddHttpClient<ConnectDB.Services.IAIService, ConnectDB.Services.AIService>();
 builder.Services.AddScoped<ConnectDB.Services.IAuthService, ConnectDB.Services.AuthService>();
 builder.Services.AddScoped<ConnectDB.Services.IBookingService, ConnectDB.Services.BookingService>();
+builder.Services.AddScoped<ConnectDB.Services.IVnPayService, ConnectDB.Services.VnPayService>();
+builder.Services.AddScoped<ConnectDB.Services.IAuditService, ConnectDB.Services.AuditService>();
+builder.Services.AddScoped<ConnectDB.Services.IEmailService, ConnectDB.Services.EmailService>();
 builder.Services.AddHostedService<ConnectDB.BackgroundServices.SeatLockCleanupService>();
 builder.Services.AddHostedService<ConnectDB.BackgroundServices.ReviewSentimentWorker>();
 
-var app = builder.Build();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("fixed", opt =>
+    {
+        opt.Window = TimeSpan.FromSeconds(10);
+        opt.PermitLimit = 10;
+        opt.QueueLimit = 0;
+    });
+});
 
-// Auto-migrate Production DB khi khởi động
+var app = builder.Build();
+app.UseRateLimiter();
+
+// Auto-migrate Production DB
 if (app.Environment.IsProduction())
 {
     using var scope = app.Services.CreateScope();
@@ -81,10 +151,9 @@ if (app.Environment.IsProduction())
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.UseSwagger();
+    app.UseSwaggerUI();
     
-    // Seed dữ liệu mẫu ở Development
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     SeedData.Initialize(context);
@@ -99,7 +168,17 @@ if (!app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ConnectDB.Data.AppDbContext>();
+    
+    ConnectDB.Data.SeedData.Initialize(context);
+}
+
 app.MapControllers();
 app.MapHub<ConnectDB.Hubs.ShowtimeHub>("/hub/showtime");
+app.UseHangfireDashboard("/admin/hangfire");
 
 app.Run();

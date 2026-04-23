@@ -27,4 +27,6 @@ public class TicketConcession
 
     [ForeignKey("ConcessionId")]
     public Concession? Concession { get; set; }
+
+    public string? SelectedOptions { get; set; } // e.g., "Vị Phô mai, Nước Coca"
 }

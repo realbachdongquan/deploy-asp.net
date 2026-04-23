@@ -42,6 +42,24 @@ public class ReviewSentimentWorker : BackgroundService
                         var (sentiment, score) = await aiService.AnalyzeSentimentAsync(review.Comment!);
                         review.Sentiment = sentiment;
                         review.SentimentScore = score;
+
+                        // VIP Feature: Auto-Alert for Negative Sentiment
+                        if (sentiment == "Negative" && score < -0.5)
+                        {
+                            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                            var adminEmail = "tt2.bdq@gmail.com"; // Default admin email
+                            string alertSubject = $"[VIP ALERT] Negative Review Detected - Movie ID: {review.MovieId}";
+                            string alertBody = $@"
+                                <h3>Cảnh báo phản hồi tiêu cực!</h3>
+                                <p>Hệ thống AI vừa phát hiện một đánh giá tiêu cực từ khách hàng.</p>
+                                <hr/>
+                                <p><strong>Nội dung:</strong> {review.Comment}</p>
+                                <p><strong>Điểm AI:</strong> {score}</p>
+                                <p><strong>Phim ID:</strong> {review.MovieId}</p>
+                                <p>Vui lòng kiểm tra và phản hồi khách hàng sớm.</p>";
+                            
+                            await emailService.SendEmailAsync(adminEmail, alertSubject, alertBody);
+                        }
                     }
 
                     await dbContext.SaveChangesAsync(stoppingToken);

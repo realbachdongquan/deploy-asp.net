@@ -32,11 +32,11 @@ export default function ShowtimesPage() {
         api.get('/movies'),
         api.get('/rooms')
       ]);
-      setShowtimes(stRes.data.items);
-      setTotalCount(stRes.data.totalCount);
-      setTotalPages(stRes.data.totalPages);
-      setMovies(mRes.data.items || mRes.data);
-      setRooms(rRes.data.items || rRes.data);
+      setShowtimes(Array.isArray(stRes.data.items) ? stRes.data.items : []);
+      setTotalCount(stRes.data.totalCount || 0);
+      setTotalPages(stRes.data.totalPages || 0);
+      setMovies(Array.isArray(mRes.data.items) ? mRes.data.items : Array.isArray(mRes.data) ? mRes.data : []);
+      setRooms(Array.isArray(rRes.data.items) ? rRes.data.items : Array.isArray(rRes.data) ? rRes.data : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -143,9 +143,9 @@ export default function ShowtimesPage() {
                   <tr key={st.id}>
                     <td style={{ paddingLeft: '2rem', color: '#444' }}>#{st.id}</td>
                     <td style={{ fontWeight: 600, color: 'white' }}>
-                      {st.movie?.title || movies.find(m => m.id === st.movieId)?.title || `Movie #${st.movieId}`}
+                      {st.movie?.title || (Array.isArray(movies) && movies.find(m => m.id === st.movieId)?.title) || `Movie #${st.movieId}`}
                     </td>
-                    <td>{st.room?.name || rooms.find(r => r.id === st.roomId)?.name || `Room #${st.roomId}`}</td>
+                    <td>{st.room?.name || (Array.isArray(rooms) && rooms.find(r => r.id === st.roomId)?.name) || `Room #${st.roomId}`}</td>
                     <td>
                       <div style={{ color: 'var(--text-primary)' }}>{new Date(st.startTime).toLocaleDateString()}</div>
                       <div style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.9rem' }}>
@@ -203,14 +203,14 @@ export default function ShowtimesPage() {
             <label>Select Movie</label>
             <select required value={formData.movieId} onChange={e => setFormData({...formData, movieId: Number(e.target.value)})}>
               <option value="">Choose a Movie...</option>
-              {movies.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+              {Array.isArray(movies) && movies.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
             </select>
           </div>
           <div className="form-group">
             <label>Select Auditorium</label>
             <select required value={formData.roomId} onChange={e => setFormData({...formData, roomId: Number(e.target.value)})}>
               <option value="">Choose a Room...</option>
-              {rooms.map(r => <option key={r.id} value={r.id}>{r.name} ({r.roomFormat})</option>)}
+              {Array.isArray(rooms) && rooms.map(r => <option key={r.id} value={r.id}>{r.name} ({r.roomFormat})</option>)}
             </select>
           </div>
           <div className="form-group">

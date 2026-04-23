@@ -9,7 +9,6 @@ namespace ConnectDB.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
 public class GenresController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -41,6 +40,7 @@ public class GenresController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,Manager,Staff")]
     public async Task<IActionResult> CreateGenre(Genre genre)
     {
         _context.Genres.Add(genre);
@@ -49,6 +49,7 @@ public class GenresController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Manager,Staff")]
     public async Task<IActionResult> UpdateGenre(int id, Genre genre)
     {
         if (id != genre.Id) return BadRequest();
@@ -58,6 +59,7 @@ public class GenresController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,Manager,Staff")]
     public async Task<IActionResult> DeleteGenre(int id)
     {
         var genre = await _context.Genres.FindAsync(id);

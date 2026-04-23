@@ -20,4 +20,6 @@ public class Concession : BaseEntity
 
     [MaxLength(50)]
     public string Category { get; set; } = "Popcorn"; // Popcorn, Drink, Combo
+
+    public string? AvailableOptions { get; set; } // Comma-separated options: "Vị Phô mai, Vị Caramel"
 }

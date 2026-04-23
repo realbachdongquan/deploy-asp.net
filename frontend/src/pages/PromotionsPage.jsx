@@ -12,7 +12,9 @@ export default function PromotionsPage() {
     promoCode: '', description: '', discountPercentage: 10, maxDiscountAmount: 50000,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    usageLimit: 100
+    usageLimit: 100,
+    isPublic: true,
+    specificEmail: ''
   });
   const [editingId, setEditingId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -47,7 +49,9 @@ export default function PromotionsPage() {
       promoCode: '', description: '', discountPercentage: 10, maxDiscountAmount: 50000,
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      usageLimit: 100
+      usageLimit: 100,
+      isPublic: true,
+      specificEmail: ''
     });
     setIsDrawerOpen(true);
   };
@@ -61,7 +65,9 @@ export default function PromotionsPage() {
       maxDiscountAmount: p.maxDiscountAmount,
       startDate: p.startDate.split('T')[0],
       endDate: p.endDate.split('T')[0],
-      usageLimit: p.usageLimit
+      usageLimit: p.usageLimit,
+      isPublic: p.isPublic,
+      specificEmail: p.specificEmail || ''
     });
     setIsDrawerOpen(true);
   };
@@ -131,6 +137,7 @@ export default function PromotionsPage() {
                   <th>Discount</th>
                   <th>Limit</th>
                   <th>Used</th>
+                  <th>Type</th>
                   <th>Validity</th>
                   <th style={{ textAlign: 'right', paddingRight: '2rem' }}>Actions</th>
                 </tr>
@@ -150,6 +157,13 @@ export default function PromotionsPage() {
                       </td>
                       <td>{p.usageLimit}</td>
                       <td>{p.currentUsage}</td>
+                      <td>
+                        {p.isPublic ? (
+                          <span style={{ padding: '0.2rem 0.6rem', background: 'rgba(255,195,0,0.1)', color: 'var(--accent)', fontSize: '0.65rem', borderRadius: '4px', fontWeight: 800 }}>PUBLIC</span>
+                        ) : (
+                          <span style={{ padding: '0.2rem 0.6rem', background: '#111', color: '#666', fontSize: '0.65rem', borderRadius: '4px' }}>PRIVATE</span>
+                        )}
+                      </td>
                       <td>
                         <div style={{ fontSize: '0.8rem', color: isExpired ? '#e50914' : '#00ff88' }}>
                           <Calendar size={12} style={{ marginRight: '4px' }} />
@@ -212,8 +226,21 @@ export default function PromotionsPage() {
           </div>
           <div className="form-group">
             <label>Description</label>
-            <textarea rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+            <textarea rows="2" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
           </div>
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#0a0a0a', border: '1px solid #111', borderRadius: '8px' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>Public Voucher</div>
+              <div style={{ fontSize: '0.7rem', color: '#555' }}>Visible to all users in their wallet</div>
+            </div>
+            <input type="checkbox" checked={formData.isPublic} onChange={e => setFormData({...formData, isPublic: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }} />
+          </div>
+          {!formData.isPublic && (
+            <div className="form-group">
+              <label>Target User Email (Optional)</label>
+              <input type="email" value={formData.specificEmail} onChange={e => setFormData({...formData, specificEmail: e.target.value})} placeholder="user@example.com" />
+            </div>
+          )}
           <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: 'auto', padding: '1rem' }}>{editingId ? 'UPDATE PROMO' : 'LAUNCH PROMO'}</button>
         </form>
       </Drawer>

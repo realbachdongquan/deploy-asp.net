@@ -24,9 +24,9 @@ export default function CrewMembersPage() {
     try {
       setLoading(true);
       const res = await api.get(`/crewmembers?page=${page}&pageSize=${pageSize}`);
-      setCrew(res.data.items);
-      setTotalCount(res.data.totalCount);
-      setTotalPages(res.data.totalPages);
+      setCrew(Array.isArray(res.data.items) ? res.data.items : Array.isArray(res.data) ? res.data : []);
+      setTotalCount(res.data.totalCount || 0);
+      setTotalPages(res.data.totalPages || 0);
     } catch (err) {
       console.error(err);
     } finally {

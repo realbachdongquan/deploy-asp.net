@@ -38,6 +38,9 @@ public class Movie : BaseEntity
     public decimal BasePrice { get; set; } = 50000;
 
     public double ImdbScore { get; set; } = 0.0;
+    
+    public double AverageRating { get; set; } = 0.0;
+    public int RatingCount { get; set; } = 0;
 
     [MaxLength(50)]
     public string Status { get; set; } = "ComingSoon"; // NowPlaying, ComingSoon, Ended

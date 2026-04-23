@@ -21,8 +21,8 @@ export default function SeatsPage() {
         api.get('/seats'),
         api.get('/rooms')
       ]);
-      setSeats(seatsRes.data);
-      setRooms(roomsRes.data);
+      setSeats(Array.isArray(seatsRes.data.items) ? seatsRes.data.items : Array.isArray(seatsRes.data) ? seatsRes.data : []);
+      setRooms(Array.isArray(roomsRes.data.items) ? roomsRes.data.items : Array.isArray(roomsRes.data) ? roomsRes.data : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -80,6 +80,7 @@ export default function SeatsPage() {
   };
 
   const getRoomName = (roomId) => {
+    if (!Array.isArray(rooms)) return `Room #${roomId}`;
     const room = rooms.find(r => r.id === roomId);
     return room ? room.name : `Room #${roomId}`;
   };
@@ -124,7 +125,7 @@ export default function SeatsPage() {
                 </tr>
               </thead>
               <tbody>
-                {seats.map(s => (
+                {Array.isArray(seats) && seats.map(s => (
                   <tr key={s.id}>
                     <td style={{ paddingLeft: '2rem', color: '#444' }}>#{s.id}</td>
                     <td>
@@ -170,7 +171,7 @@ export default function SeatsPage() {
             <label>Auditorium</label>
             <select required value={formData.roomId} onChange={e => setFormData({...formData, roomId: Number(e.target.value)})}>
               <option value="">Select a Room</option>
-              {rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              {Array.isArray(rooms) && rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

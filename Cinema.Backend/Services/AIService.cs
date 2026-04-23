@@ -50,6 +50,41 @@ public class AIService : IAIService
         }
     }
 
+    public async Task<MovieContentResult?> GenerateMovieContentAsync(string movieTitle)
+    {
+        if (string.IsNullOrWhiteSpace(_apiKey)) return null;
+
+        var prompt = $"Generate cinematic content for the movie titled '{movieTitle}' in Vietnamese. " +
+                     "Include a captivating 'description' (about 100 words), a short 'summary' (one sentence), and 3 relevant 'tags'. " +
+                     "Return only a JSON object with these fields: 'description', 'summary', 'tags' (array). " +
+                     "Example: {\"description\": \"...\", \"summary\": \"...\", \"tags\": [\"...\", \"...\"]}";
+
+        try
+        {
+            var response = await CallGeminiAsync(prompt);
+            var result = JsonDocument.Parse(response);
+            var text = result.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text").GetString();
+
+            if (text != null && text.Contains("```json"))
+            {
+                text = text.Replace("```json", "").Replace("```", "").Trim();
+            }
+
+            return JsonSerializer.Deserialize<MovieContentResult>(text ?? "{}", new JsonSerializerOptions 
+            { 
+                PropertyNameCaseInsensitive = true 
+            });
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public async Task<List<string>> GetMovieRecommendationsAsync(List<string> watchedMovieTitles, List<string> availableMovieTitles)
     {
         if (string.IsNullOrWhiteSpace(_apiKey) || !watchedMovieTitles.Any()) return new List<string>();
@@ -82,6 +117,33 @@ public class AIService : IAIService
         catch
         {
             return new List<string>();
+        }
+    }
+
+    public async Task<string> GenerateRawTextAsync(string prompt)
+    {
+        if (string.IsNullOrWhiteSpace(_apiKey)) return "";
+
+        try
+        {
+            var response = await CallGeminiAsync(prompt);
+            var result = JsonDocument.Parse(response);
+            var text = result.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text").GetString();
+
+            if (text != null && text.Contains("```json"))
+            {
+                text = text.Replace("```json", "").Replace("```", "").Trim();
+            }
+
+            return text ?? "";
+        }
+        catch
+        {
+            return "";
         }
     }
 

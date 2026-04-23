@@ -25,4 +25,11 @@ public class Promotion : BaseEntity
     public int UsageLimit { get; set; } = 100;
 
     public int CurrentUsage { get; set; } = 0;
+
+    [MaxLength(255)]
+    public string? SpecificEmail { get; set; }
+
+    public bool IsPublic { get; set; } = true;
+    public bool IsActive { get; set; } = true;
+    public int MaxSeatsPerOrder { get; set; } = 0; // 0 means no limit
 }

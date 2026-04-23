@@ -9,7 +9,7 @@ namespace ConnectDB.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Manager,Staff")]
 public class AuditLogsController : ControllerBase
 {
     private readonly AppDbContext _context;

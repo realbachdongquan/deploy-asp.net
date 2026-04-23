@@ -3,6 +3,7 @@ using ConnectDB.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Cinema.Tests;
@@ -21,8 +22,6 @@ public abstract class TestBase : IDisposable
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        // Note: AppDbContext in the new project might have a slightly different constructor
-        // But since I copied the old one, it should still need IHttpContextAccessor
         var mockHttpAccessor = new Mock<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
 
         Context = new AppDbContext(options, mockHttpAccessor.Object);
@@ -39,6 +38,8 @@ public abstract class TestBase : IDisposable
         
         MockHubClients.Setup(c => c.Group(It.IsAny<string>())).Returns(new Mock<IClientProxy>().As<ISingleClientProxy>().Object);
     }
+
+    protected Mock<ILogger<T>> CreateMockLogger<T>() => new Mock<ILogger<T>>();
 
     public void Dispose()
     {

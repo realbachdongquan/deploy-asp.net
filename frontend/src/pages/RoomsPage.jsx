@@ -28,10 +28,10 @@ export default function RoomsPage() {
         api.get(`/rooms?page=${page}&pageSize=${pageSize}`),
         api.get('/cinemas')
       ]);
-      setRooms(roomsRes.data.items);
-      setTotalCount(roomsRes.data.totalCount);
-      setTotalPages(roomsRes.data.totalPages);
-      setCinemas(cinemasRes.data.items || cinemasRes.data);
+      setRooms(Array.isArray(roomsRes.data.items) ? roomsRes.data.items : Array.isArray(roomsRes.data) ? roomsRes.data : []);
+      setTotalCount(roomsRes.data.totalCount || 0);
+      setTotalPages(roomsRes.data.totalPages || 0);
+      setCinemas(Array.isArray(cinemasRes.data.items) ? cinemasRes.data.items : Array.isArray(cinemasRes.data) ? cinemasRes.data : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -129,11 +129,11 @@ export default function RoomsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rooms.map(r => (
+                {Array.isArray(rooms) && rooms.map(r => (
                   <tr key={r.id}>
                     <td style={{ paddingLeft: '2rem', color: '#444' }}>#{r.id}</td>
                     <td style={{ fontWeight: 600, color: 'white' }}>{r.name}</td>
-                    <td>{cinemas.find(c => c.id === r.cinemaId)?.name || `Cinema #${r.cinemaId}`}</td>
+                    <td>{Array.isArray(cinemas) ? cinemas.find(c => c.id === r.cinemaId)?.name || `Cinema #${r.cinemaId}` : `Cinema #${r.cinemaId}`}</td>
                     <td>{r.capacity} Seats</td>
                     <td><span style={{ color: 'var(--accent)', fontSize: '0.8rem', fontWeight: 700 }}>{r.roomFormat || '2D'}</span></td>
                     <td style={{ textAlign: 'right', paddingRight: '2rem' }}>
@@ -178,7 +178,7 @@ export default function RoomsPage() {
             <label>Cinema Location</label>
             <select required value={formData.cinemaId} onChange={e => setFormData({...formData, cinemaId: Number(e.target.value)})}>
               <option value="">Select a Cinema</option>
-              {cinemas.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {Array.isArray(cinemas) && cinemas.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

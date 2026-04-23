@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <CETCompat>false</CETCompat>
+    <CheckForAspNetCoreRuntimeFlag>false</CheckForAspNetCoreRuntimeFlag>
+    <UseAppHost>false</UseAppHost>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+</Project>

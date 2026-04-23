@@ -43,6 +43,7 @@ public class AppDbContext : DbContext
     public DbSet<Concession> Concessions { get; set; } = null!;
     public DbSet<TicketConcession> TicketConcessions { get; set; } = null!;
     public DbSet<Promotion> Promotions { get; set; } = null!;
+    public DbSet<UserPromotion> UserPromotions { get; set; } = null!;
     public DbSet<Payment> Payments { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -99,44 +100,133 @@ public class AppDbContext : DbContext
         return System.Linq.Expressions.Expression.Lambda(notDeleted, parameter);
     }
 
-    public override int SaveChanges()
-    {
-        ApplyAuditInfo();
-        return base.SaveChanges();
-    }
-
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        ApplyAuditInfo();
-        return await base.SaveChangesAsync(cancellationToken);
+        var auditEntries = OnBeforeSaveChanges();
+        var result = await base.SaveChangesAsync(cancellationToken);
+        await OnAfterSaveChanges(auditEntries);
+        return result;
     }
 
-    private void ApplyAuditInfo()
+    public override int SaveChanges()
     {
-        var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email) ?? "System";
-        var entries = ChangeTracker.Entries<BaseEntity>();
+        var auditEntries = OnBeforeSaveChanges();
+        var result = base.SaveChanges();
+        // Use Task.Run only if we are in a sync context but need to call async
+        OnAfterSaveChanges(auditEntries).GetAwaiter().GetResult();
+        return result;
+    }
 
-        foreach (var entry in entries)
+    private List<AuditEntry> OnBeforeSaveChanges()
+    {
+        ChangeTracker.DetectChanges();
+        var auditEntries = new List<AuditEntry>();
+        var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email) 
+                         ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("email") 
+                         ?? "System";
+
+        foreach (var entry in ChangeTracker.Entries())
         {
-            switch (entry.State)
+            if (entry.Entity is AuditLog || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                continue;
+
+            var auditEntry = new AuditEntry(entry);
+            auditEntry.EntityName = entry.Entity.GetType().Name;
+            auditEntry.ChangedBy = userEmail;
+            auditEntries.Add(auditEntry);
+
+            foreach (var property in entry.Properties)
             {
-                case EntityState.Added:
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.CreatedBy = userEmail;
-                    entry.Entity.IsDeleted = false;
-                    break;
-                case EntityState.Modified:
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy = userEmail;
-                    break;
-                case EntityState.Deleted:
-                    // Soft Delete
-                    entry.State = EntityState.Modified;
-                    entry.Entity.IsDeleted = true;
-                    entry.Entity.DeletedAt = DateTime.UtcNow;
-                    entry.Entity.DeletedBy = userEmail;
-                    break;
+                string propertyName = property.Metadata.Name;
+                if (property.Metadata.IsPrimaryKey())
+                {
+                    auditEntry.KeyValues[propertyName] = property.CurrentValue;
+                    continue;
+                }
+
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        auditEntry.Action = "Create";
+                        auditEntry.NewValues[propertyName] = property.CurrentValue;
+                        break;
+
+                    case EntityState.Deleted:
+                        auditEntry.Action = "Delete";
+                        auditEntry.OldValues[propertyName] = property.OriginalValue;
+                        break;
+
+                    case EntityState.Modified:
+                        if (property.IsModified)
+                        {
+                            auditEntry.Action = "Update";
+                            auditEntry.OldValues[propertyName] = property.OriginalValue;
+                            auditEntry.NewValues[propertyName] = property.CurrentValue;
+                        }
+                        break;
+                }
+            }
+
+            // Also handle BaseEntity fields
+            if (entry.Entity is BaseEntity baseEntity)
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        baseEntity.CreatedAt = DateTime.UtcNow;
+                        baseEntity.CreatedBy = userEmail;
+                        baseEntity.IsDeleted = false;
+                        break;
+                    case EntityState.Modified:
+                        baseEntity.UpdatedAt = DateTime.UtcNow;
+                        baseEntity.UpdatedBy = userEmail;
+                        break;
+                }
             }
         }
+
+        return auditEntries;
+    }
+
+    private async Task OnAfterSaveChanges(List<AuditEntry> auditEntries)
+    {
+        if (auditEntries == null || auditEntries.Count == 0) return;
+
+        foreach (var auditEntry in auditEntries)
+        {
+            AuditLogs.Add(auditEntry.ToAuditLog());
+        }
+
+        // Use base.SaveChangesAsync() to avoid triggering the audit interceptor again
+        await base.SaveChangesAsync();
+    }
+}
+
+public class AuditEntry
+{
+    public AuditEntry(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        Entry = entry;
+    }
+
+    public Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry Entry { get; }
+    public string EntityName { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;
+    public string ChangedBy { get; set; } = string.Empty;
+    public Dictionary<string, object?> KeyValues { get; } = new();
+    public Dictionary<string, object?> OldValues { get; } = new();
+    public Dictionary<string, object?> NewValues { get; } = new();
+
+    public AuditLog ToAuditLog()
+    {
+        var audit = new AuditLog();
+        audit.EntityName = EntityName;
+        audit.Timestamp = DateTime.UtcNow;
+        audit.Action = Action;
+        audit.ChangedBy = ChangedBy;
+        audit.EntityId = System.Text.Json.JsonSerializer.Serialize(KeyValues);
+        audit.OldValues = OldValues.Count == 0 ? null : System.Text.Json.JsonSerializer.Serialize(OldValues);
+        audit.NewValues = NewValues.Count == 0 ? null : System.Text.Json.JsonSerializer.Serialize(NewValues);
+        return audit;
     }
 }

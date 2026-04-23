@@ -20,8 +20,17 @@ public class CheckoutRequest
 {
     public int ShowtimeId { get; set; }
     public List<int> SeatIds { get; set; } = new();
-    public List<int>? ConcessionIds { get; set; }
+    public List<ConcessionRequest>? Concessions { get; set; }
     public string PaymentMethod { get; set; } = "VNPAY";
+    public string? PromoCode { get; set; }
+    public int? UserPromotionId { get; set; }
+}
+
+public class ConcessionRequest
+{
+    public int ConcessionId { get; set; }
+    public int Quantity { get; set; }
+    public string? SelectedOptions { get; set; }
 }
 
 public class BookingResponse
@@ -29,4 +38,7 @@ public class BookingResponse
     public int TicketId { get; set; }
     public string BookingCode { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
+    public string? PaymentUrl { get; set; }
+    public bool Success { get; set; } = true;
+    public string? Message { get; set; }
 }
