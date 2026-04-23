@@ -1,7 +1,7 @@
 # ──────────────────────────────────────────
 # Stage 1: Build (chạy trên Render, có internet)
 # ──────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy .csproj và restore packages
@@ -15,7 +15,7 @@ RUN dotnet publish "Cinema.Backend.csproj" -c Release -o /app/publish /p:UseAppH
 # ──────────────────────────────────────────
 # Stage 2: Runtime (nhẹ hơn, chỉ chứa app)
 # ──────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
 # Copy artifact từ build stage
