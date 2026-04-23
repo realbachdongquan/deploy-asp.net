@@ -174,6 +174,27 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<ConnectDB.Data.AppDbContext>();
     
+    // 1. Chạy Migration chuẩn
+    try {
+        context.Database.Migrate();
+    } catch (Exception ex) {
+        Console.WriteLine($"[Migration Error] {ex.Message}");
+    }
+
+    // 2. Fix thủ công bảng AuditLogs (vì có thể Migration bị lệch)
+    try {
+        context.Database.ExecuteSqlRaw(@"
+            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""EntityName"" text DEFAULT '';
+            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""EntityId"" text DEFAULT '';
+            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""OldValues"" text;
+            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""NewValues"" text;
+            ALTER TABLE ""AuditLogs"" ADD COLUMN IF NOT EXISTS ""ChangedBy"" text;
+            ALTER TABLE ""AuditLogs"" ALTER COLUMN ""AdminUserId"" DROP NOT NULL;
+        ");
+    } catch (Exception ex) {
+        Console.WriteLine($"[SQL Fix Error] {ex.Message}");
+    }
+
     ConnectDB.Data.SeedData.Initialize(context);
 }
 
