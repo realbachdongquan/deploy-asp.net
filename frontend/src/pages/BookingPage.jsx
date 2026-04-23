@@ -258,13 +258,9 @@ export default function BookingPage() {
       if (res.data.paymentUrl) window.location.href = res.data.paymentUrl;
       else navigate(`/ticket-success/${res.data.ticketId}`);
     } catch (err) {
-<<<<<<< HEAD
       console.error("[Checkout Error]", err);
       const serverMsg = err.response?.data?.message || err.response?.data;
       alert(`Thanh toán thất bại. ${serverMsg || "Phiên của bạn có thể đã hết hạn."}`);
-=======
-      alert("Thanh toán thất bại. Phiên của bạn có thể đã hết hạn.");
->>>>>>> 7d9239482c49161f8c9542f4796931a539c7f1d2
       setSelectedSeats([]);
     } finally {
       setBookingLoading(false);
