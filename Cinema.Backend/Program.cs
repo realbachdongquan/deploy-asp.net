@@ -23,6 +23,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     if (connectionString != null && (connectionString.Contains("Host=") || connectionString.Contains("Port=") || connectionString.Contains("SSL Mode=") || connectionString.Contains("postgres://")))
     {
+        // Thêm Max Pool Size để tránh lỗi connection limit trên Aiven Free
+        if (!connectionString.Contains("Max Pool Size") && !connectionString.Contains("Maximum Pool Size")) {
+            connectionString += ";Max Pool Size=20;";
+        }
         options.UseNpgsql(connectionString);
     }
     else
@@ -143,24 +147,7 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 app.UseRateLimiter();
 
-// Auto-migrate Production DB
-if (app.Environment.IsProduction())
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-    SeedData.Initialize(db);
-}
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    
-    using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    SeedData.Initialize(context);
-}
+// Database initialization moved to the end for clarity and to avoid multiple scopes opening connections
 
 app.UseCors("AllowReact");
 
