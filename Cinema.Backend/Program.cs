@@ -23,9 +23,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     if (connectionString != null && (connectionString.Contains("Host=") || connectionString.Contains("Port=") || connectionString.Contains("SSL Mode=") || connectionString.Contains("postgres://")))
     {
-        // Thêm Max Pool Size để tránh lỗi connection limit trên Aiven Free
-        if (!connectionString.Contains("Max Pool Size") && !connectionString.Contains("Maximum Pool Size")) {
-            connectionString += ";Max Pool Size=20;";
+        try {
+            var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+            npgsqlBuilder.MaximumPoolSize = 20;
+            connectionString = npgsqlBuilder.ToString();
+        } catch {
+            // Fallback nếu chuỗi kết nối quá dị
         }
         options.UseNpgsql(connectionString);
     }
