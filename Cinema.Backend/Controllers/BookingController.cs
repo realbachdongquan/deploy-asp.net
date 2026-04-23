@@ -33,20 +33,29 @@ public class BookingController : ControllerBase
     [HttpPost("lock")]
     public async Task<IActionResult> LockSeats([FromBody] LockSeatRequest request)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) 
-                        ?? User.FindFirstValue("sub")
-                        ?? User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) 
+                            ?? User.FindFirstValue("sub")
+                            ?? User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
 
-        if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
-        if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
-        
-        var userEmail = User.FindFirstValue(ClaimTypes.Email) ?? "System";
+            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+            if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
+            
+            var userEmail = User.FindFirstValue(ClaimTypes.Email) ?? "System";
 
-        var result = await _bookingService.LockSeatsAsync(request.ShowtimeId, request.SeatIds, userId, userEmail);
-        
-        if (!result) return Conflict("Some seats are already locked or booked.");
-        
-        return Ok(new { Message = "Seats locked successfully." });
+            var result = await _bookingService.LockSeatsAsync(request.ShowtimeId, request.SeatIds, userId, userEmail);
+            
+            if (!result) return Conflict("Some seats are already locked or booked.");
+            
+            return Ok(new { Message = "Seats locked successfully." });
+        }
+        catch (Exception ex)
+        {
+            // Log chi tiet loi de debug tren Render logs
+            Console.WriteLine($"[LockSeats ERROR] {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+            return StatusCode(500, new { Error = ex.Message, Type = ex.GetType().Name });
+        }
     }
 
     [HttpPost("unlock")]

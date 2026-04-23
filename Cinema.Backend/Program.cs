@@ -148,11 +148,13 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+// ⚡ CORS phải là middleware ĐẦU TIÊN để header luôn có mặt dù server có lỗi
+app.UseCors("AllowReact");
+
 app.UseRateLimiter();
 
 // Database initialization moved to the end for clarity and to avoid multiple scopes opening connections
-
-app.UseCors("AllowReact");
 
 if (!app.Environment.IsDevelopment())
 {
